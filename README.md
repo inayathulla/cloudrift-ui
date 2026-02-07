@@ -64,11 +64,40 @@
 
 ## Screenshots
 
-> Screenshots can be added by placing images in `assets/screenshots/` and referencing them here.
+### Dashboard
+KPI cards, drift trend chart, severity breakdown, recent alerts, and service health — all at a glance.
 
-| Dashboard | Drift Diff Viewer | Compliance |
-|-----------|-------------------|------------|
-| KPI cards, trend charts, severity breakdown | Attribute-level expected vs actual comparison | Animated compliance ring with category scores |
+![Dashboard](assets/screenshots/01_dashboard.png)
+
+### Scan & History
+Configure and trigger scans with real-time progress. Full scan history table with timestamps, metrics, and status.
+
+![Scan](assets/screenshots/02_scan.png)
+
+### Resource Explorer
+Filter by service, severity, or search by name. Severity-coded accent bars for instant visual triage.
+
+![Resources](assets/screenshots/03_resources.png)
+
+### Drift Diff Viewer
+Three-column diff: Attribute / Expected (Terraform) / Actual (AWS). Color-coded green/red with remediation.
+
+![Resource Detail](assets/screenshots/04_resource_detail.png)
+
+### Policy Dashboard
+All 21 OPA policies with pass/fail status, severity badges, and violation counts per category tab.
+
+![Policies](assets/screenshots/05_policies.png)
+
+### Compliance Scoring
+Animated compliance ring with category breakdowns (Security, Tagging, Cost) and trend over time.
+
+![Compliance](assets/screenshots/06_compliance.png)
+
+### Settings
+CLI path configuration, AWS credentials, scan defaults, and data management.
+
+![Settings](assets/screenshots/07_settings.png)
 
 ## Prerequisites
 
@@ -213,26 +242,15 @@ You can also set a custom path in **Settings > Cloudrift CLI**.
 
 ## Screens
 
-### Dashboard
-KPI metric cards (Total Resources, Drifts, Violations, Compliance %), drift trend line chart (last 30 scans), severity breakdown donut chart, recent alerts panel, and service health indicators.
-
-### Scan
-Service selector (S3/EC2), config path input, scan trigger button with progress timer, scan result status bar, and sortable scan history table with responsive columns.
-
-### Resources
-Stats header (Total/With Drift/Clean), filter bar with service chips, severity filters, and search field. Clickable resource cards with severity accent bars that navigate to detailed views.
-
-### Resource Detail
-Three-column drift diff viewer showing Attribute/Expected(Terraform)/Actual(AWS) with color-coded values (green=expected, red=actual, amber=extra attributes). Policy violations with remediation guidance.
-
-### Policies
-Tabbed view (All/Security/Tagging/Cost) with violation count badges. Expandable policy rows showing ID, name, severity, description, remediation, and affected resource count.
-
-### Compliance
-Large animated compliance ring (CustomPainter), category cards (Security/Tagging/Cost) with mini rings and pass/fail counts, compliance trend chart over time.
-
-### Settings
-CLI binary path configuration with connection test, AWS profile/region settings, scan defaults (policy directory, fail-on-violation, skip-policies toggles), and data management (clear history).
+| Screen | Route | Description |
+|--------|-------|-------------|
+| **Dashboard** | `/dashboard` | KPI cards, drift trend chart (last 30 scans), severity donut, recent alerts, service health |
+| **Scan** | `/scan` | Service selector (S3/EC2), config path, scan trigger with timer, history table |
+| **Resources** | `/resources` | Stat chips, filter bar (service/severity/search), clickable resource cards |
+| **Resource Detail** | `/resources/:id` | Three-column diff viewer (Attribute/Expected/Actual), policy violations with remediation |
+| **Policies** | `/policies` | Tabbed view (All/Security/Tagging/Cost), expandable policy rows with pass/fail |
+| **Compliance** | `/compliance` | Animated compliance ring, category cards with mini rings, trend chart |
+| **Settings** | `/settings` | CLI path, AWS config, scan defaults, data management |
 
 ## Configuration
 
