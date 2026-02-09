@@ -16,9 +16,19 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue?style=flat-square" alt="License"></a>
 </p>
 
+<p align="center">
+  <img src="assets/screenshots/01_dashboard.png" alt="Cloudrift UI Dashboard" width="800">
+</p>
+
 ---
 
-**Cloudrift UI** is a cross-platform dashboard for the [Cloudrift](https://github.com/inayathulla/cloudrift) infrastructure governance CLI. It runs as a native desktop app (macOS / Linux / Windows) or as a Docker-hosted web app with a Go API backend. It renders real-time drift detection results, policy violations with compliance framework mapping, and interactive compliance scoring in a dark-themed professional interface.
+**Cloudrift UI** is a cross-platform dashboard for the [Cloudrift](https://github.com/inayathulla/cloudrift) infrastructure governance CLI. It runs **two ways**:
+
+> **Web via Docker** — One command deploys a full-stack container with Flutter web app, Go API server, nginx, and Terraform. Open your browser and go.
+>
+> **Native Desktop** — Runs directly on macOS, Linux, or Windows with the Cloudrift CLI binary. No server needed.
+
+Both modes share the same codebase, the same 7 screens, and full feature parity — drift detection, policy evaluation, compliance scoring, and resource building all work identically regardless of deployment mode.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -39,8 +49,8 @@
 - [Features](#features)
 - [What's New in Release 2](#whats-new-in-release-2)
 - [Screenshots](#screenshots)
-- [Quick Start — Docker (Recommended)](#quick-start--docker-recommended)
-- [Quick Start — Desktop](#quick-start--desktop)
+- [Quick Start — Web via Docker (Recommended)](#quick-start--web-via-docker-recommended)
+- [Quick Start — Native Desktop](#quick-start--native-desktop)
 - [Architecture](#architecture)
 - [Screens](#screens)
 - [Configuration](#configuration)
@@ -82,49 +92,67 @@ Release 2 adds **web/Docker deployment**, a **hybrid Resource Builder**, **compl
 | **Policies Screen** | Severity sorting, framework/severity/status filters, violation counts in tab headers |
 | **Navigation** | Per-destination accent colors (blue, teal, purple, pink, orange, green, gray) instead of uniform blue |
 | **Scan Duration** | Human-readable format (e.g. "3.2s", "2m 15.3s") throughout the app |
-| **Settings** | Streamlined — removed plan editor, simplified to CLI config + scan defaults |
+| **Settings** | Unified config editor — load/save `cloudrift.yml` on both web (API) and desktop (file), with policy dir and scan defaults |
 | **Performance** | CLI command timeouts (5 min scan, 10 min Terraform), job cleanup goroutine, cached policy filters, efficient string building in Go |
 
 ## Screenshots
 
-### Dashboard
-Clickable KPI cards, drift trend chart, severity breakdown, framework compliance rings, top failing policies, and scan duration.
+> All screenshots below are from the **web version running in Docker** (`docker run -p 8080:80 cloudrift-ui`).
+> The desktop app renders identically — same screens, same layout, same features.
+
+### Dashboard — KPIs, Drift Trends & Framework Compliance
+Clickable KPI cards that navigate to related screens, live drift trend chart, severity donut breakdown, HIPAA/GDPR/ISO 27001/PCI DSS compliance rings, and top failing policies — all at a glance.
 
 ![Dashboard](assets/screenshots/01_dashboard.png)
 
-### Scan & History
-Configure and trigger scans with real-time progress. History table with human-readable durations.
+---
 
-![Scan](assets/screenshots/02_scan.png)
+### Scan & History — Run Scans, Track Results
+Select a service (S3/EC2), pick a config file, and trigger a scan. History table shows every past scan with region, drift counts, violation counts, and human-readable durations.
 
-### Resource Builder
-Three-mode builder: Terraform (upload .tf → generate plan.json), Manual (S3/EC2 forms), or Upload (drag & drop).
+![Scan & History](assets/screenshots/02_scan.png)
 
-![Builder](assets/screenshots/03_resource_builder.png)
+---
 
-### Resource Explorer
-Filter by service, severity, or search by name. Severity-coded accent bars for instant visual triage.
+### Resource Builder — Terraform, Manual & Upload
+Three ways to define your infrastructure plan:
+- **Terraform** — Upload `.tf` files and auto-generate `plan.json` (Docker runs `terraform init → plan → show -json`)
+- **Manual** — Build S3 buckets and EC2 instances from interactive forms
+- **Upload** — Drag & drop an existing `plan.json`
+
+![Resource Builder](assets/screenshots/03_resource_builder.png)
+
+---
+
+### Resource Explorer — Filter, Search & Triage
+Filter resources by service type, severity level, or search by name. Each card shows drift count and severity with color-coded accent bars for instant visual triage.
 
 ![Resources](assets/screenshots/04_resources.png)
 
-### Policy Dashboard
-21 OPA policies with compliance framework badges (HIPAA/GDPR/ISO/PCI), severity filters, and violation counts.
+---
+
+### Policy Dashboard — 21 OPA Policies with Compliance Mapping
+Every policy is mapped to compliance frameworks (HIPAA, GDPR, ISO 27001, PCI DSS). Filter by severity, framework, or pass/fail status. Violation counts show in tab headers.
 
 ![Policies](assets/screenshots/05_policies.png)
 
-### Compliance Scoring
-Animated compliance ring with category breakdowns (Security, Tagging, Cost) and trend over time.
+---
+
+### Compliance Scoring — Animated Rings & Category Breakdowns
+Large animated compliance ring showing overall posture. Category cards (Security, Tagging, Cost) with mini rings and per-policy drill-down. Trend chart shows compliance over time.
 
 ![Compliance](assets/screenshots/06_compliance.png)
 
-### Settings
-CLI path configuration, AWS credentials, scan defaults, and data management.
+---
+
+### Settings — Config File Editor, CLI & Scan Defaults
+Load and save `cloudrift.yml` config files (web uses the Go API, desktop reads/writes locally). Configure AWS profile, region, policy directory, and scan behavior. Works identically on both web and desktop.
 
 ![Settings](assets/screenshots/07_settings.png)
 
-## Quick Start — Docker (Recommended)
+## Quick Start — Web via Docker (Recommended)
 
-The Docker image bundles everything: Flutter web app, Go API server, nginx, and Terraform.
+> **Zero dependencies.** The Docker image bundles the Flutter web app, Go API server, nginx reverse proxy, Cloudrift CLI, and Terraform — everything in one container.
 
 ```bash
 # Build the image
@@ -162,7 +190,9 @@ The Resource Builder's Terraform mode auto-detects mounted files.
 4. Click **Generate Plan from Terraform** — runs `terraform init` → `plan` → `show -json` inside the container
 5. Go to **Scan** → click **Run Scan** → view results across all screens
 
-## Quick Start — Desktop
+## Quick Start — Native Desktop
+
+> **Direct CLI access.** The desktop app calls the Cloudrift binary directly via `Process.run()` — no server, no container, no network overhead.
 
 ### Prerequisites
 
