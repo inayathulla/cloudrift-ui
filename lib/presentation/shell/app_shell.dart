@@ -3,40 +3,74 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
 
-/// Persistent layout shell wrapping all screens with a 72px-wide NavigationRail.
+/// Persistent layout shell wrapping all screens with a 88px-wide sidebar.
 ///
-/// Displays the "CR" logo at the top and six navigation destinations
-/// (Dashboard, Scan, Resources, Policies, Compliance, Settings). The
-/// selected index is derived from the current [GoRouter] location.
+/// Displays the "CR" logo at the top and seven navigation destinations
+/// (Dashboard, Scan, Builder, Resources, Policies, Compliance, Settings).
+/// Each destination has a unique accent color when selected.
 class AppShell extends StatelessWidget {
-  /// The routed screen content rendered to the right of the rail.
   final Widget child;
 
   const AppShell({super.key, required this.child});
 
+  static const _destinations = [
+    _NavItem(
+      route: '/dashboard',
+      icon: Icons.dashboard_outlined,
+      selectedIcon: Icons.dashboard,
+      label: 'Dashboard',
+      color: AppColors.accentBlue,
+    ),
+    _NavItem(
+      route: '/scan',
+      icon: Icons.radar_outlined,
+      selectedIcon: Icons.radar,
+      label: 'Scan',
+      color: AppColors.accentTeal,
+    ),
+    _NavItem(
+      route: '/resource-builder',
+      icon: Icons.build_outlined,
+      selectedIcon: Icons.build,
+      label: 'Builder',
+      color: AppColors.accentPurple,
+    ),
+    _NavItem(
+      route: '/resources',
+      icon: Icons.dns_outlined,
+      selectedIcon: Icons.dns,
+      label: 'Resources',
+      color: Color(0xFFFF6B8A),
+    ),
+    _NavItem(
+      route: '/policies',
+      icon: Icons.policy_outlined,
+      selectedIcon: Icons.policy,
+      label: 'Policies',
+      color: AppColors.high,
+    ),
+    _NavItem(
+      route: '/compliance',
+      icon: Icons.verified_outlined,
+      selectedIcon: Icons.verified,
+      label: 'Compliance',
+      color: AppColors.low,
+    ),
+    _NavItem(
+      route: '/settings',
+      icon: Icons.settings_outlined,
+      selectedIcon: Icons.settings,
+      label: 'Settings',
+      color: AppColors.textSecondary,
+    ),
+  ];
+
   int _selectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.toString();
-    if (location.startsWith('/dashboard')) return 0;
-    if (location.startsWith('/scan')) return 1;
-    if (location.startsWith('/resources')) return 2;
-    if (location.startsWith('/policies')) return 3;
-    if (location.startsWith('/compliance')) return 4;
-    if (location.startsWith('/settings')) return 5;
-    return 0;
-  }
-
-  void _onDestinationSelected(BuildContext context, int index) {
-    const routes = [
-      '/dashboard',
-      '/scan',
-      '/resources',
-      '/policies',
-      '/compliance',
-      '/settings',
-    ];
-    if (index < routes.length) {
-      context.go(routes[index]);
+    for (int i = 0; i < _destinations.length; i++) {
+      if (location.startsWith(_destinations[i].route)) return i;
     }
+    return 0;
   }
 
   @override
@@ -47,7 +81,7 @@ class AppShell extends StatelessWidget {
       body: Row(
         children: [
           Container(
-            width: 72,
+            width: 88,
             decoration: const BoxDecoration(
               color: AppColors.background,
               border: Border(
@@ -83,44 +117,62 @@ class AppShell extends StatelessWidget {
                 const SizedBox(height: 24),
                 // Navigation items
                 Expanded(
-                  child: NavigationRail(
-                    selectedIndex: selectedIndex,
-                    onDestinationSelected: (index) =>
-                        _onDestinationSelected(context, index),
-                    backgroundColor: Colors.transparent,
-                    labelType: NavigationRailLabelType.all,
-                    destinations: const [
-                      NavigationRailDestination(
-                        icon: Icon(Icons.dashboard_outlined),
-                        selectedIcon: Icon(Icons.dashboard),
-                        label: Text('Dashboard'),
-                      ),
-                      NavigationRailDestination(
-                        icon: Icon(Icons.radar_outlined),
-                        selectedIcon: Icon(Icons.radar),
-                        label: Text('Scan'),
-                      ),
-                      NavigationRailDestination(
-                        icon: Icon(Icons.dns_outlined),
-                        selectedIcon: Icon(Icons.dns),
-                        label: Text('Resources'),
-                      ),
-                      NavigationRailDestination(
-                        icon: Icon(Icons.policy_outlined),
-                        selectedIcon: Icon(Icons.policy),
-                        label: Text('Policies'),
-                      ),
-                      NavigationRailDestination(
-                        icon: Icon(Icons.verified_outlined),
-                        selectedIcon: Icon(Icons.verified),
-                        label: Text('Compliance'),
-                      ),
-                      NavigationRailDestination(
-                        icon: Icon(Icons.settings_outlined),
-                        selectedIcon: Icon(Icons.settings),
-                        label: Text('Settings'),
-                      ),
-                    ],
+                  child: ListView.builder(
+                    itemCount: _destinations.length,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    itemBuilder: (context, index) {
+                      final item = _destinations[index];
+                      final isSelected = index == selectedIndex;
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: InkWell(
+                          onTap: () => context.go(item.route),
+                          borderRadius: BorderRadius.circular(10),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? item.color.withValues(alpha: 0.12)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              border: isSelected
+                                  ? Border.all(
+                                      color: item.color.withValues(alpha: 0.25))
+                                  : null,
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  isSelected ? item.selectedIcon : item.icon,
+                                  size: 22,
+                                  color: isSelected
+                                      ? item.color
+                                      : AppColors.textTertiary,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  item.label,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w600
+                                        : FontWeight.w400,
+                                    color: isSelected
+                                        ? item.color
+                                        : AppColors.textTertiary,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -131,4 +183,20 @@ class AppShell extends StatelessWidget {
       ),
     );
   }
+}
+
+class _NavItem {
+  final String route;
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  final Color color;
+
+  const _NavItem({
+    required this.route,
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+    required this.color,
+  });
 }

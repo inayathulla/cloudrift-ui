@@ -1,26 +1,42 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:http/http.dart' as http;
+
 import '../models/scan_result.dart';
 
 /// Bridge between the Flutter UI and the Cloudrift Go CLI binary.
 ///
-/// Invokes the `cloudrift` CLI via [Process.run], parses its JSON stdout,
-/// and returns typed [ScanResult] objects. Handles binary auto-detection,
-/// working directory resolution, and stdout JSON extraction.
+/// - **Desktop**: Invokes the CLI directly via [Process.run].
+/// - **Web**: Calls the backend API server that wraps the CLI.
 class CliDatasource {
   String _cliBinaryPath = '';
   String _cloudriftRepoDir = '';
 
+  /// Base URL for the backend API (web mode only).
+  /// Defaults to same origin (nginx proxies /api to the Go server).
+  String _apiBaseUrl = '';
+
   CliDatasource() {
-    _detectPaths();
+    if (kIsWeb) {
+      // Same origin — nginx reverse proxies /api to Go backend
+      _apiBaseUrl = '';
+    } else {
+      _detectPaths();
+    }
   }
 
-  /// Detects the cloudrift binary path and repo directory.
+  // ---------------------------------------------------------------------------
+  // Desktop: path detection
+  // ---------------------------------------------------------------------------
+
   void _detectPaths() {
-    // Check common development paths
-    const candidates = [
-      '/Users/inayath/Developer/startup/cloudrift',
+    // Build candidate paths dynamically from environment
+    final home = Platform.environment['HOME'] ?? '';
+    final candidates = <String>[
+      if (home.isNotEmpty) '$home/Developer/startup/cloudrift',
+      if (home.isNotEmpty) '$home/cloudrift',
     ];
 
     for (final dir in candidates) {
@@ -32,7 +48,6 @@ class CliDatasource {
       }
     }
 
-    // Check sibling repo relative to this project via Platform.script
     try {
       final scriptDir = Platform.script.toFilePath();
       final projectDir = scriptDir.contains('cloudrift-ui')
@@ -49,7 +64,6 @@ class CliDatasource {
       }
     } catch (_) {}
 
-    // Check GOPATH/bin
     final gopath = Platform.environment['GOPATH'] ??
         '${Platform.environment['HOME']}/go';
     final gopathBin = '$gopath/bin/cloudrift';
@@ -63,24 +77,25 @@ class CliDatasource {
     _cloudriftRepoDir = '';
   }
 
-  /// Manually overrides the CLI binary path and derives the repo directory.
+  // ---------------------------------------------------------------------------
+  // Public API
+  // ---------------------------------------------------------------------------
+
   void setCliBinaryPath(String path) {
     _cliBinaryPath = path;
-    // Derive repo dir from binary path
-    final binaryFile = File(path);
-    if (binaryFile.existsSync()) {
-      _cloudriftRepoDir = binaryFile.parent.path;
+    if (!kIsWeb) {
+      final binaryFile = File(path);
+      if (binaryFile.existsSync()) {
+        _cloudriftRepoDir = binaryFile.parent.path;
+      }
     }
   }
 
-  /// Current path to the cloudrift binary.
   String get cliBinaryPath => _cliBinaryPath;
-
-  /// Root directory of the cloudrift repository, used as working directory.
   String get cloudriftRepoDir => _cloudriftRepoDir;
 
-  /// Returns the default config file path if it exists in the repo.
   String get defaultConfigPath {
+    if (kIsWeb) return 'config/cloudrift.yml';
     if (_cloudriftRepoDir.isNotEmpty) {
       final configFile = File('$_cloudriftRepoDir/config/cloudrift.yml');
       if (configFile.existsSync()) return configFile.path;
@@ -88,8 +103,19 @@ class CliDatasource {
     return 'cloudrift.yml';
   }
 
-  /// Checks if the cloudrift binary is accessible and responds to `scan --help`.
   Future<bool> isCliAvailable() async {
+    if (kIsWeb) {
+      try {
+        final resp = await http.get(Uri.parse('$_apiBaseUrl/api/health'));
+        if (resp.statusCode == 200) {
+          final body = jsonDecode(resp.body) as Map<String, dynamic>;
+          return body['available'] == true;
+        }
+        return false;
+      } catch (_) {
+        return false;
+      }
+    }
     try {
       final result = await Process.run(_cliBinaryPath, ['scan', '--help']);
       return result.exitCode == 0;
@@ -98,8 +124,19 @@ class CliDatasource {
     }
   }
 
-  /// Returns the CLI version string, or `null` if unavailable.
   Future<String?> getCliVersion() async {
+    if (kIsWeb) {
+      try {
+        final resp = await http.get(Uri.parse('$_apiBaseUrl/api/version'));
+        if (resp.statusCode == 200) {
+          final body = jsonDecode(resp.body) as Map<String, dynamic>;
+          return body['version'] as String?;
+        }
+        return null;
+      } catch (_) {
+        return null;
+      }
+    }
     try {
       final result = await Process.run(_cliBinaryPath, ['--version']);
       if (result.exitCode == 0) {
@@ -111,16 +148,69 @@ class CliDatasource {
     }
   }
 
-  /// Executes a Cloudrift scan and returns the parsed result.
-  ///
-  /// Runs `cloudrift scan --config=<path> --service=<svc> --format=json --no-emoji`
-  /// via [Process.run]. Handles exit codes:
-  /// - `0` = success (no drift)
-  /// - `1` = error (throws [CliException])
-  /// - `2` = policy violations found (still returns valid output)
-  ///
-  /// Throws [CliException] on scan failure or JSON parse errors.
   Future<ScanResult> runScan({
+    required String configPath,
+    required String service,
+    String? policyDir,
+    bool skipPolicies = false,
+  }) async {
+    if (kIsWeb) {
+      return _runScanWeb(
+        configPath: configPath,
+        service: service,
+        policyDir: policyDir,
+        skipPolicies: skipPolicies,
+      );
+    }
+    return _runScanDesktop(
+      configPath: configPath,
+      service: service,
+      policyDir: policyDir,
+      skipPolicies: skipPolicies,
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Web: HTTP calls to backend API
+  // ---------------------------------------------------------------------------
+
+  Future<ScanResult> _runScanWeb({
+    required String configPath,
+    required String service,
+    String? policyDir,
+    bool skipPolicies = false,
+  }) async {
+    try {
+      final resp = await http.post(
+        Uri.parse('$_apiBaseUrl/api/scan'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'service': service,
+          'config_path': configPath,
+          if (policyDir != null && policyDir.isNotEmpty) 'policy_dir': policyDir,
+          if (skipPolicies) 'skip_policies': true,
+        }),
+      );
+
+      if (resp.statusCode != 200) {
+        final body = jsonDecode(resp.body) as Map<String, dynamic>;
+        throw CliException(body['error'] as String? ?? 'Scan failed');
+      }
+
+      final json = jsonDecode(resp.body) as Map<String, dynamic>;
+      return ScanResult.fromJson(json);
+    } on CliException {
+      rethrow;
+    } catch (e) {
+      throw CliException('Failed to reach API server: $e');
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Desktop: direct Process.run
+  // ---------------------------------------------------------------------------
+
+  Future<ScanResult> _runScanDesktop({
     required String configPath,
     required String service,
     String? policyDir,
@@ -156,9 +246,6 @@ class CliDatasource {
       throw CliException('Scan failed: ${stderr.isNotEmpty ? stderr : stdout}');
     }
 
-    // Exit code 0 = success, 2 = policy violations found (still valid output)
-    // The CLI prints status messages before the JSON output,
-    // so extract just the JSON portion from stdout.
     try {
       final jsonStr = _extractJson(stdout);
       final json = jsonDecode(jsonStr) as Map<String, dynamic>;
@@ -168,15 +255,11 @@ class CliDatasource {
     }
   }
 
-  /// Extracts the JSON object from CLI output that may contain
-  /// status/progress lines before the JSON.
   String _extractJson(String output) {
-    // Find the first '{' which starts the JSON object
     final jsonStart = output.indexOf('{');
     if (jsonStart == -1) {
       throw const FormatException('No JSON object found in output');
     }
-    // Find the matching closing '}' by scanning from the end
     final jsonEnd = output.lastIndexOf('}');
     if (jsonEnd == -1 || jsonEnd <= jsonStart) {
       throw const FormatException('Incomplete JSON object in output');

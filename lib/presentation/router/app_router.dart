@@ -5,6 +5,7 @@ import '../screens/compliance/compliance_screen.dart';
 import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/policies/policies_screen.dart';
 import '../screens/resource_detail/resource_detail_screen.dart';
+import '../screens/resource_builder/resource_builder_screen.dart';
 import '../screens/resources/resources_screen.dart';
 import '../screens/scan/scan_screen.dart';
 import '../screens/settings/settings_screen.dart';
@@ -44,6 +45,12 @@ final appRouter = GoRouter(
           path: '/scan',
           pageBuilder: (context, state) => const NoTransitionPage(
             child: ScanScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/resource-builder',
+          pageBuilder: (context, state) => const NoTransitionPage(
+            child: ResourceBuilderScreen(),
           ),
         ),
         GoRoute(

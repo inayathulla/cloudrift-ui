@@ -328,7 +328,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
                                     ),
                                   )),
                                   if (isWide)
-                                    DataCell(Text('${entry.scanDurationMs}ms')),
+                                    DataCell(Text(_formatMs(entry.scanDurationMs))),
                                   DataCell(_statusChip(entry.status)),
                                 ],
                               );
@@ -383,6 +383,16 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
     final minutes = d.inMinutes.toString().padLeft(2, '0');
     final seconds = (d.inSeconds % 60).toString().padLeft(2, '0');
     return '$minutes:$seconds';
+  }
+
+  String _formatMs(int ms) {
+    final totalSeconds = ms / 1000;
+    if (totalSeconds < 60) {
+      return '${totalSeconds.toStringAsFixed(1)}s';
+    }
+    final mins = totalSeconds ~/ 60;
+    final secs = (totalSeconds % 60).toStringAsFixed(1);
+    return '${mins}m ${secs}s';
   }
 }
 

@@ -1,16 +1,13 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:path_provider/path_provider.dart';
 
 import '../models/scan_history_entry.dart';
 
 /// Hive-backed local persistence for scan history and user settings.
 ///
-/// Must call [init] before use. Uses a dedicated `cloudrift_hive` directory
-/// under the application documents folder, with stale lock file cleanup
-/// to prevent startup failures after unclean exits.
+/// Must call [init] before use. Uses [Hive.initFlutter] which handles
+/// both desktop (file system) and web (IndexedDB) storage automatically.
 class LocalStorageDatasource {
   static const _historyBoxName = 'scan_history';
   static const _settingsBoxName = 'settings';
@@ -18,25 +15,11 @@ class LocalStorageDatasource {
   late Box<String> _historyBox;
   late Box<String> _settingsBox;
 
-  /// Initializes Hive storage, cleans up stale lock files, and opens boxes.
+  /// Initializes Hive storage and opens boxes.
   ///
   /// Must be called once during app startup before any other operations.
   Future<void> init() async {
-    final dir = await getApplicationDocumentsDirectory();
-    final hivePath = '${dir.path}/cloudrift_hive';
-    await Directory(hivePath).create(recursive: true);
-
-    // Remove stale lock files
-    for (final name in [_historyBoxName, _settingsBoxName]) {
-      final lockFile = File('$hivePath/$name.lock');
-      if (await lockFile.exists()) {
-        try {
-          await lockFile.delete();
-        } catch (_) {}
-      }
-    }
-
-    Hive.init(hivePath);
+    await Hive.initFlutter('cloudrift_hive');
     _historyBox = await Hive.openBox<String>(_historyBoxName);
     _settingsBox = await Hive.openBox<String>(_settingsBoxName);
   }
