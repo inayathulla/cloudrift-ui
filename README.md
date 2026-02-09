@@ -12,12 +12,22 @@
   <a href="https://github.com/inayathulla/cloudrift"><img src="https://img.shields.io/badge/Powered_by-Cloudrift_CLI-blue?style=flat-square" alt="Powered by Cloudrift CLI"></a>
   <a href="https://flutter.dev"><img src="https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&style=flat-square" alt="Flutter"></a>
   <a href="#"><img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey?style=flat-square" alt="Platform"></a>
+  <a href="https://hub.docker.com/r/inayathulla/cloudrift-ui"><img src="https://img.shields.io/badge/Docker_Hub-inayathulla%2Fcloudrift--ui-2496ED?logo=docker&style=flat-square" alt="Docker Hub"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue?style=flat-square" alt="License"></a>
 </p>
 
 ---
 
 **Cloudrift UI** is a native desktop application that provides a security-grade dashboard for the [Cloudrift](https://github.com/inayathulla/cloudrift) infrastructure governance CLI. It invokes the Cloudrift binary, parses JSON output, and renders real-time drift detection results, policy violations, and compliance scoring in a dark-themed professional interface.
+
+> **Looking for the Web/Docker version?** Starting from [v2.0.0](https://github.com/inayathulla/cloudrift-ui/releases/tag/v2.0.0), Cloudrift UI also runs as a web app via Docker with a Go API backend, Resource Builder, and compliance framework mapping. Pull it from Docker Hub:
+>
+> ```bash
+> docker pull inayathulla/cloudrift-ui:latest
+> docker run -d -p 8080:80 -v ~/.aws:/root/.aws:ro inayathulla/cloudrift-ui
+> ```
+>
+> See the [`main`](https://github.com/inayathulla/cloudrift-ui) branch or [Docker Hub](https://hub.docker.com/r/inayathulla/cloudrift-ui) for details.
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
