@@ -518,8 +518,22 @@ docker exec cloudrift-ui ps aux    # Should show nginx + api-server
 docker exec cloudrift-ui curl http://localhost:8081/api/health
 ```
 
+**Scan fails with "failed to get shared config profile, default":**
+The Cloudrift CLI inside Docker needs AWS credentials. You must mount your local `~/.aws` directory:
+```bash
+# Stop and remove the old container
+docker rm -f cloudrift-ui
+
+# Re-run with AWS credentials mounted
+docker run -d -p 8080:80 \
+  -v ~/.aws:/root/.aws:ro \
+  --name cloudrift-ui \
+  inayathulla/cloudrift-ui:latest
+```
+> **Important:** The `-v ~/.aws:/root/.aws:ro` flag is required for scans to work. Without it, every scan will fail with an AWS auth error.
+
 **Terraform plan fails with auth error:**
-Ensure AWS credentials are mounted:
+Same fix — ensure AWS credentials are mounted:
 ```bash
 docker run -v ~/.aws:/root/.aws:ro ...
 ```
