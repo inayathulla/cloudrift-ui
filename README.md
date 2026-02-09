@@ -12,7 +12,7 @@
   <a href="https://github.com/inayathulla/cloudrift"><img src="https://img.shields.io/badge/Powered_by-Cloudrift_CLI-blue?style=flat-square" alt="Powered by Cloudrift CLI"></a>
   <a href="https://flutter.dev"><img src="https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&style=flat-square" alt="Flutter"></a>
   <a href="#"><img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows%20%7C%20Web-lightgrey?style=flat-square" alt="Platform"></a>
-  <a href="#"><img src="https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&style=flat-square" alt="Docker"></a>
+  <a href="https://hub.docker.com/r/inayathulla/cloudrift-ui"><img src="https://img.shields.io/badge/Docker_Hub-inayathulla%2Fcloudrift--ui-2496ED?logo=docker&style=flat-square" alt="Docker Hub"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue?style=flat-square" alt="License"></a>
 </p>
 
@@ -154,8 +154,33 @@ Load and save `cloudrift.yml` config files (web uses the Go API, desktop reads/w
 
 > **Zero dependencies.** The Docker image bundles the Flutter web app, Go API server, nginx reverse proxy, Cloudrift CLI, and Terraform — everything in one container.
 
+### Pull from Docker Hub
+
+Pre-built images are available on [Docker Hub](https://hub.docker.com/r/inayathulla/cloudrift-ui):
+
 ```bash
-# Build the image
+# Pull the latest image
+docker pull inayathulla/cloudrift-ui:latest
+
+# Run with AWS credentials
+docker run -d -p 8080:80 \
+  -v ~/.aws:/root/.aws:ro \
+  --name cloudrift-ui \
+  inayathulla/cloudrift-ui:latest
+
+# Open in browser
+open http://localhost:8080
+```
+
+| Tag | Description |
+|-----|-------------|
+| `latest` | Latest stable release (currently v2.0.0) |
+| `v2.0.0` | Release 2 — Docker/Web deployment, Resource Builder, compliance frameworks |
+
+### Build from Source
+
+```bash
+# Build the image locally
 docker build -t cloudrift-ui .
 
 # Run with AWS credentials
