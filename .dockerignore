@@ -1,0 +1,17 @@
+build/
+.dart_tool/
+.idea/
+.vscode/
+*.iml
+.git/
+.github/
+.gitignore
+*.md
+LICENSE
+assets/screenshots/
+test/
+macos/
+linux/
+windows/
+android/
+ios/

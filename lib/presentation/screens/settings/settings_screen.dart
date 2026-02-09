@@ -1,19 +1,18 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../data/datasources/config_datasource.dart';
+import '../../../data/models/cloudrift_config.dart';
+import '../../../data/models/file_list_result.dart';
 import '../../../providers/providers.dart';
 import '../../widgets/glassmorphic_card.dart';
 
 /// Application settings screen for CLI configuration, AWS credentials,
 /// scan defaults, and data management.
 ///
-/// Sections:
-/// - **Cloudrift CLI**: Binary path and "Test Connection" to verify availability.
-/// - **AWS Configuration**: Profile name and region inputs.
-/// - **Scan Defaults**: Custom policy directory, fail-on-violation toggle,
-///   skip-policies toggle.
-/// - **Data**: Clear scan history with confirmation dialog.
+/// On web, also shows a config file editor backed by the Go API server.
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
@@ -31,6 +30,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String? _cliVersionInfo;
   bool _checkingCli = false;
 
+  // Preserved from loaded config (managed by Builder, not editable here)
+  String _currentPlanPath = '';
+
+  // Web config editor state
+  bool _configLoaded = false;
+  bool _loadingConfig = false;
+  bool _savingConfig = false;
+  String? _configMessage;
+  bool _configMessageIsError = false;
+  String _selectedConfigPath = 'config/cloudrift.yml';
+  List<FileEntry> _availableConfigs = [];
+
+  @override
+  void initState() {
+    super.initState();
+    if (kIsWeb) {
+      _loadFileList();
+    } else {
+      // On desktop, use the CLI's detected config path
+      _selectedConfigPath =
+          ref.read(cliDatasourceProvider).defaultConfigPath;
+    }
+    _loadConfigFromApi();
+  }
+
   @override
   void dispose() {
     _cliPathController.dispose();
@@ -39,6 +63,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _policyDirController.dispose();
     super.dispose();
   }
+
+  // ---------------------------------------------------------------------------
+  // CLI check
+  // ---------------------------------------------------------------------------
 
   Future<void> _checkCliAvailability() async {
     setState(() => _checkingCli = true);
@@ -53,6 +81,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           : 'Cloudrift CLI not found on PATH';
     });
   }
+
+  // ---------------------------------------------------------------------------
+  // Clear history
+  // ---------------------------------------------------------------------------
 
   Future<void> _clearHistory() async {
     final confirmed = await showDialog<bool>(
@@ -87,6 +119,82 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       }
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Web: config file operations
+  // ---------------------------------------------------------------------------
+
+  Future<void> _loadFileList() async {
+    try {
+      final result = await ref.read(configDatasourceProvider).listFiles();
+      setState(() {
+        _availableConfigs = result.configs;
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _loadConfigFromApi() async {
+    setState(() {
+      _loadingConfig = true;
+      _configMessage = null;
+    });
+    try {
+      final config =
+          await ref.read(configDatasourceProvider).loadConfig(_selectedConfigPath);
+      setState(() {
+        _awsProfileController.text = config.awsProfile;
+        _regionController.text = config.region;
+        _currentPlanPath = config.planPath;
+        _policyDirController.text = config.policyDir ?? '';
+        _failOnViolation = config.failOnViolation;
+        _skipPolicies = config.skipPolicies;
+        _loadingConfig = false;
+        _configLoaded = true;
+      });
+    } on ConfigException catch (e) {
+      setState(() {
+        _loadingConfig = false;
+        _configMessage = e.message;
+        _configMessageIsError = true;
+      });
+    }
+  }
+
+  Future<void> _saveConfigToApi() async {
+    setState(() {
+      _savingConfig = true;
+      _configMessage = null;
+    });
+    try {
+      final config = CloudriftConfig(
+        awsProfile: _awsProfileController.text,
+        region: _regionController.text,
+        planPath: _currentPlanPath,
+        policyDir:
+            _policyDirController.text.isEmpty ? null : _policyDirController.text,
+        failOnViolation: _failOnViolation,
+        skipPolicies: _skipPolicies,
+      );
+      await ref
+          .read(configDatasourceProvider)
+          .saveConfig(_selectedConfigPath, config);
+      setState(() {
+        _savingConfig = false;
+        _configMessage = 'Saved successfully';
+        _configMessageIsError = false;
+      });
+    } on ConfigException catch (e) {
+      setState(() {
+        _savingConfig = false;
+        _configMessage = e.message;
+        _configMessageIsError = true;
+      });
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Build
+  // ---------------------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -181,56 +289,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             const SizedBox(height: 16),
 
-            // AWS Configuration
-            GlassmorphicCard(
-              accentColor: AppColors.accentPurple,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.cloud_outlined,
-                          size: 20, color: AppColors.accentPurple),
-                      SizedBox(width: 8),
-                      Text(
-                        'AWS Configuration',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _awsProfileController,
-                          style: const TextStyle(fontSize: 14),
-                          decoration: const InputDecoration(
-                            labelText: 'AWS Profile',
-                            hintText: 'default',
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: TextField(
-                          controller: _regionController,
-                          style: const TextStyle(fontSize: 14),
-                          decoration: const InputDecoration(
-                            labelText: 'Region',
-                            hintText: 'us-east-1',
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+            // Config File Editor (web) or AWS Configuration (desktop)
+            if (kIsWeb) _buildConfigEditorCard() else _buildDesktopAwsCard(),
             const SizedBox(height: 16),
 
             // Scan Defaults
@@ -254,25 +314,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  TextField(
-                    controller: _policyDirController,
-                    style: const TextStyle(fontSize: 14),
-                    decoration: const InputDecoration(
-                      labelText: 'Custom Policy Directory',
-                      hintText: 'Optional: path to .rego files',
-                      prefixIcon: Icon(Icons.folder_outlined, size: 18),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
                   SwitchListTile(
                     title: const Text(
                       'Fail on Violation',
-                      style: TextStyle(fontSize: 14, color: AppColors.textPrimary),
+                      style:
+                          TextStyle(fontSize: 14, color: AppColors.textPrimary),
                     ),
                     subtitle: const Text(
                       'Exit with error code when violations found',
-                      style:
-                          TextStyle(fontSize: 12, color: AppColors.textTertiary),
+                      style: TextStyle(
+                          fontSize: 12, color: AppColors.textTertiary),
                     ),
                     value: _failOnViolation,
                     onChanged: (v) => setState(() => _failOnViolation = v),
@@ -282,12 +333,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   SwitchListTile(
                     title: const Text(
                       'Skip Policies',
-                      style: TextStyle(fontSize: 14, color: AppColors.textPrimary),
+                      style:
+                          TextStyle(fontSize: 14, color: AppColors.textPrimary),
                     ),
                     subtitle: const Text(
                       'Run drift detection only',
-                      style:
-                          TextStyle(fontSize: 12, color: AppColors.textTertiary),
+                      style: TextStyle(
+                          fontSize: 12, color: AppColors.textTertiary),
                     ),
                     value: _skipPolicies,
                     onChanged: (v) => setState(() => _skipPolicies = v),
@@ -341,6 +393,296 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Desktop AWS Configuration card
+  // ---------------------------------------------------------------------------
+
+  Widget _buildDesktopAwsCard() {
+    return GlassmorphicCard(
+      accentColor: AppColors.accentPurple,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.settings_outlined,
+                  size: 20, color: AppColors.accentPurple),
+              const SizedBox(width: 8),
+              const Text(
+                'Config File',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                _selectedConfigPath,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontFamily: 'monospace',
+                  color: AppColors.textTertiary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (_loadingConfig)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else ...[
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _awsProfileController,
+                    style: const TextStyle(fontSize: 14),
+                    decoration: const InputDecoration(
+                      labelText: 'AWS Profile',
+                      hintText: 'default',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: TextField(
+                    controller: _regionController,
+                    style: const TextStyle(fontSize: 14),
+                    decoration: const InputDecoration(
+                      labelText: 'Region',
+                      hintText: 'us-east-1',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _policyDirController,
+              style: const TextStyle(fontSize: 14),
+              decoration: const InputDecoration(
+                labelText: 'Custom Policy Directory',
+                hintText: 'Optional: path to .rego files',
+                prefixIcon: Icon(Icons.folder_outlined, size: 18),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                ElevatedButton.icon(
+                  onPressed: (_savingConfig || !_configLoaded)
+                      ? null
+                      : _saveConfigToApi,
+                  icon: _savingConfig
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Icon(Icons.save, size: 16),
+                  label: const Text('Save Config'),
+                ),
+                const SizedBox(width: 12),
+                OutlinedButton.icon(
+                  onPressed: _loadingConfig ? null : _loadConfigFromApi,
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: const Text('Reload'),
+                ),
+                if (_configMessage != null) ...[
+                  const SizedBox(width: 16),
+                  Icon(
+                    _configMessageIsError
+                        ? Icons.error
+                        : Icons.check_circle,
+                    size: 16,
+                    color: _configMessageIsError
+                        ? AppColors.critical
+                        : AppColors.low,
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      _configMessage!,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: _configMessageIsError
+                            ? AppColors.critical
+                            : AppColors.low,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Web Config File Editor card
+  // ---------------------------------------------------------------------------
+
+  Widget _buildConfigEditorCard() {
+    return GlassmorphicCard(
+      accentColor: AppColors.accentPurple,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.settings_outlined,
+                  size: 20, color: AppColors.accentPurple),
+              const SizedBox(width: 8),
+              const Text(
+                'Config File',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const Spacer(),
+              if (_availableConfigs.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceElevated,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _availableConfigs
+                              .any((f) => f.path == _selectedConfigPath)
+                          ? _selectedConfigPath
+                          : _availableConfigs.first.path,
+                      dropdownColor: AppColors.cardBackground,
+                      style: const TextStyle(
+                          fontSize: 13, color: AppColors.textPrimary),
+                      items: _availableConfigs
+                          .map((f) => DropdownMenuItem(
+                                value: f.path,
+                                child: Text(f.name),
+                              ))
+                          .toList(),
+                      onChanged: (v) {
+                        if (v != null) {
+                          setState(() => _selectedConfigPath = v);
+                          _loadConfigFromApi();
+                        }
+                      },
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (_loadingConfig)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else ...[
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _awsProfileController,
+                    style: const TextStyle(fontSize: 14),
+                    decoration: const InputDecoration(
+                      labelText: 'AWS Profile',
+                      hintText: 'default',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: TextField(
+                    controller: _regionController,
+                    style: const TextStyle(fontSize: 14),
+                    decoration: const InputDecoration(
+                      labelText: 'Region',
+                      hintText: 'us-east-1',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _policyDirController,
+              style: const TextStyle(fontSize: 14),
+              decoration: const InputDecoration(
+                labelText: 'Custom Policy Directory',
+                hintText: 'Optional: path to .rego files',
+                prefixIcon: Icon(Icons.folder_outlined, size: 18),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                ElevatedButton.icon(
+                  onPressed: (_savingConfig || !_configLoaded) ? null : _saveConfigToApi,
+                  icon: _savingConfig
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Icon(Icons.save, size: 16),
+                  label: const Text('Save Config'),
+                ),
+                const SizedBox(width: 12),
+                OutlinedButton.icon(
+                  onPressed: _loadingConfig ? null : _loadConfigFromApi,
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: const Text('Reload'),
+                ),
+                if (_configMessage != null) ...[
+                  const SizedBox(width: 16),
+                  Icon(
+                    _configMessageIsError
+                        ? Icons.error
+                        : Icons.check_circle,
+                    size: 16,
+                    color: _configMessageIsError
+                        ? AppColors.critical
+                        : AppColors.low,
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      _configMessage!,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: _configMessageIsError
+                            ? AppColors.critical
+                            : AppColors.low,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }
