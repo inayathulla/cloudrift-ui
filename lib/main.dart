@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -14,17 +13,17 @@ import 'providers/providers.dart';
 /// [LocalStorageDatasource] is injected via provider override to avoid
 /// late-initialization errors.
 ///
-/// On web, seeds demo scan data so all dashboard screens are populated
-/// without needing the Cloudrift CLI.
+/// Seeds demo scan data on first launch so all dashboard screens are
+/// populated without needing a real CLI scan. Skips if history already exists.
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final storage = LocalStorageDatasource();
   await storage.init();
 
-  if (kIsWeb) {
-    await seedDemoData(storage);
-  }
+  // Seed demo data on first launch (both web and desktop) so all screens
+  // render with meaningful data before a real scan is performed.
+  await seedDemoData(storage);
 
   runApp(
     ProviderScope(

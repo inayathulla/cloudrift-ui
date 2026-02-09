@@ -57,6 +57,8 @@ class _ResourceBuilderScreenState
     if (kIsWeb) {
       _loadExistingPlan();
       _checkTerraformStatus();
+    } else {
+      _loadExistingPlanDesktop();
     }
   }
 
@@ -105,6 +107,33 @@ class _ResourceBuilderScreenState
       // No existing plan — start fresh
     } finally {
       setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _loadExistingPlanDesktop() async {
+    // On desktop, try to load from the cloudrift repo's examples directory
+    try {
+      final cli = ref.read(cliDatasourceProvider);
+      final repoDir = cli.cloudriftRepoDir;
+      if (repoDir.isEmpty) return;
+      final path = '$repoDir/examples/generated-plan.json';
+      final ds = ref.read(configDatasourceProvider);
+      final content = await ds.loadPlanJson(path);
+      final plan = jsonDecode(content) as Map<String, dynamic>;
+      final s3 = PlanBuilder.parseS3Plan(plan);
+      final ec2 = PlanBuilder.parseEC2Plan(plan);
+      setState(() {
+        if (s3.isNotEmpty) {
+          _s3Resources = s3;
+          _selectedService = 's3';
+        }
+        if (ec2.isNotEmpty) {
+          _ec2Resources = ec2;
+          if (s3.isEmpty) _selectedService = 'ec2';
+        }
+      });
+    } catch (_) {
+      // No existing plan — start fresh
     }
   }
 
@@ -331,31 +360,52 @@ class _ResourceBuilderScreenState
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['json'],
-      withData: true,
+      withData: kIsWeb,
+      // On desktop, get the file path instead of bytes
     );
     if (result == null || result.files.isEmpty) return;
     final file = result.files.first;
-    if (file.bytes == null) return;
 
     setState(() {
       _uploadingPlan = true;
       _message = null;
     });
     try {
-      final ds = ref.read(configDatasourceProvider);
-      final savedPath = await ds.uploadPlanFile(file.name, file.bytes!);
-      setState(() {
-        _uploadingPlan = false;
-        _uploadedPlanPath = savedPath;
-        _message = 'Plan uploaded: $savedPath — config updated';
-        _messageIsError = false;
-      });
+      if (kIsWeb) {
+        if (file.bytes == null) return;
+        final ds = ref.read(configDatasourceProvider);
+        final savedPath = await ds.uploadPlanFile(file.name, file.bytes!);
+        setState(() {
+          _uploadedPlanPath = savedPath;
+          _message = 'Plan uploaded: $savedPath — config updated';
+          _messageIsError = false;
+        });
+      } else {
+        // Desktop: use the file path directly
+        final filePath = file.path;
+        if (filePath == null) return;
+        // Validate it's valid JSON
+        final ds = ref.read(configDatasourceProvider);
+        final content = await ds.loadPlanJson(filePath);
+        jsonDecode(content); // Validate JSON
+        setState(() {
+          _uploadedPlanPath = filePath;
+          _message = 'Plan loaded: $filePath';
+          _messageIsError = false;
+        });
+      }
     } on ConfigException catch (e) {
       setState(() {
-        _uploadingPlan = false;
         _message = e.message;
         _messageIsError = true;
       });
+    } catch (e) {
+      setState(() {
+        _message = 'Failed to load plan: $e';
+        _messageIsError = true;
+      });
+    } finally {
+      setState(() => _uploadingPlan = false);
     }
   }
 
@@ -366,9 +416,9 @@ class _ResourceBuilderScreenState
       final jsonStr = await ds.loadPlanJson(_uploadedPlanPath!);
       final plan = jsonDecode(jsonStr) as Map<String, dynamic>;
       _showJsonPreview(plan);
-    } on ConfigException catch (e) {
+    } catch (e) {
       setState(() {
-        _message = e.message;
+        _message = 'Failed to load plan: $e';
         _messageIsError = true;
       });
     }
@@ -407,17 +457,15 @@ class _ResourceBuilderScreenState
                   ),
                   const SizedBox(height: 20),
 
-                  // Mode selector: Terraform | Manual
-                  if (kIsWeb) ...[
-                    _buildModeSelector(),
-                    const SizedBox(height: 20),
-                  ],
+                  // Mode selector: Terraform | Manual | Upload
+                  _buildModeSelector(),
+                  const SizedBox(height: 20),
 
                   // Terraform mode
-                  if (_mode == 'terraform' && kIsWeb) _buildTerraformSection(),
+                  if (_mode == 'terraform') _buildTerraformSection(),
 
                   // Upload mode
-                  if (_mode == 'upload' && kIsWeb) _buildUploadSection(),
+                  if (_mode == 'upload') _buildUploadSection(),
 
                   // Manual mode
                   if (_mode == 'manual') ...[
@@ -604,6 +652,58 @@ class _ResourceBuilderScreenState
   // ---------------------------------------------------------------------------
 
   Widget _buildTerraformSection() {
+    // Desktop: Terraform mode requires the Docker/web deployment
+    if (!kIsWeb) {
+      return GlassmorphicCard(
+        accentColor: AppColors.accentTeal,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.info_outline, color: AppColors.accentTeal, size: 20),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Terraform mode requires the Docker deployment',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'The Terraform integration runs inside the Docker container where Terraform is installed. '
+              'Build and run the Docker image to use this feature:',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const SelectableText(
+                'docker build -t cloudrift-ui .\n'
+                'docker run -d -p 8080:80 -v ~/.aws:/root/.aws:ro cloudrift-ui\n'
+                'open http://localhost:8080',
+                style: TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 12,
+                  color: AppColors.accentTeal,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     if (_tfChecking) {
       return const Center(
         child: Padding(
@@ -617,11 +717,11 @@ class _ResourceBuilderScreenState
     if (status == null || !status.available) {
       return GlassmorphicCard(
         accentColor: AppColors.high,
-        child: Row(
+        child: const Row(
           children: [
-            const Icon(Icons.warning_amber, color: AppColors.high, size: 20),
-            const SizedBox(width: 12),
-            const Expanded(
+            Icon(Icons.warning_amber, color: AppColors.high, size: 20),
+            SizedBox(width: 12),
+            Expanded(
               child: Text(
                 'Terraform is not installed in this environment. Use the Manual tab to define resources.',
                 style: TextStyle(color: AppColors.textPrimary, fontSize: 14),

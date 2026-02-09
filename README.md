@@ -107,25 +107,20 @@ Filter by service, severity, or search by name. Severity-coded accent bars for i
 
 ![Resources](assets/screenshots/04_resources.png)
 
-### Drift Diff Viewer
-Three-column diff: Attribute / Expected (Terraform) / Actual (AWS). Color-coded green/red with remediation.
-
-![Resource Detail](assets/screenshots/05_resource_detail.png)
-
 ### Policy Dashboard
 21 OPA policies with compliance framework badges (HIPAA/GDPR/ISO/PCI), severity filters, and violation counts.
 
-![Policies](assets/screenshots/06_policies.png)
+![Policies](assets/screenshots/05_policies.png)
 
 ### Compliance Scoring
 Animated compliance ring with category breakdowns (Security, Tagging, Cost) and trend over time.
 
-![Compliance](assets/screenshots/07_compliance.png)
+![Compliance](assets/screenshots/06_compliance.png)
 
 ### Settings
 CLI path configuration, AWS credentials, scan defaults, and data management.
 
-![Settings](assets/screenshots/08_settings.png)
+![Settings](assets/screenshots/07_settings.png)
 
 ## Quick Start — Docker (Recommended)
 

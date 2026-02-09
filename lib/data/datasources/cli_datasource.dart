@@ -242,16 +242,20 @@ class CliDatasource {
     final stdout = result.stdout as String;
     final stderr = result.stderr as String;
 
-    if (result.exitCode == 1) {
-      throw CliException('Scan failed: ${stderr.isNotEmpty ? stderr : stdout}');
-    }
-
+    // Try to parse JSON output even on non-zero exit codes.
+    // The CLI may exit with code 1 when policy engine fails but drift
+    // detection succeeds — the JSON output is still valid and useful.
     try {
       final jsonStr = _extractJson(stdout);
       final json = jsonDecode(jsonStr) as Map<String, dynamic>;
       return ScanResult.fromJson(json);
-    } catch (e) {
-      throw CliException('Failed to parse scan output: $e\nOutput: $stdout');
+    } catch (_) {
+      // No valid JSON found — now treat as a real failure
+      if (result.exitCode != 0) {
+        throw CliException(
+            'Scan failed (exit code ${result.exitCode}): ${stderr.isNotEmpty ? stderr : stdout}');
+      }
+      throw CliException('Failed to parse scan output.\nOutput: $stdout');
     }
   }
 
