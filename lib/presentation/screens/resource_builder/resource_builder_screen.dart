@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../data/datasources/config_datasource.dart';
+import '../../../data/models/cloudrift_config.dart';
 import '../../../data/models/plan_builder.dart';
 import '../../../data/models/terraform_job.dart';
 import '../../../data/models/terraform_status.dart';
@@ -187,8 +188,40 @@ class _ResourceBuilderScreenState
           _messageIsError = false;
         });
       } else {
-        // Desktop: just show the JSON
-        _showJsonPreview(planJson);
+        // Desktop: save plan JSON to the cloudrift repo directory
+        final cli = ref.read(cliDatasourceProvider);
+        final repoDir = cli.cloudriftRepoDir;
+        if (repoDir.isEmpty) {
+          // No repo found — fall back to showing preview
+          _showJsonPreview(planJson);
+          return;
+        }
+        final planPath = '$repoDir/examples/generated-plan.json';
+        final ds = ref.read(configDatasourceProvider);
+        final jsonStr = const JsonEncoder.withIndent('  ').convert(planJson);
+        await ds.savePlanJson(planPath, jsonStr);
+
+        // Update config to point to the new plan
+        final configPath = cli.defaultConfigPath;
+        try {
+          final config = await ds.loadConfig(configPath);
+          final updated = CloudriftConfig(
+            awsProfile: config.awsProfile,
+            region: config.region,
+            planPath: './examples/generated-plan.json',
+            policyDir: config.policyDir,
+            failOnViolation: config.failOnViolation,
+            skipPolicies: config.skipPolicies,
+          );
+          await ds.saveConfig(configPath, updated);
+        } catch (_) {
+          // Config update is best-effort
+        }
+
+        setState(() {
+          _message = 'Plan saved to $planPath — config updated';
+          _messageIsError = false;
+        });
       }
     } on ConfigException catch (e) {
       setState(() {

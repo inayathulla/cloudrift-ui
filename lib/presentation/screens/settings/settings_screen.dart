@@ -47,8 +47,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     super.initState();
     if (kIsWeb) {
       _loadFileList();
-      _loadConfigFromApi();
+    } else {
+      // On desktop, use the CLI's detected config path
+      _selectedConfigPath =
+          ref.read(cliDatasourceProvider).defaultConfigPath;
     }
+    _loadConfigFromApi();
   }
 
   @override
@@ -310,17 +314,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  if (!kIsWeb)
-                    TextField(
-                      controller: _policyDirController,
-                      style: const TextStyle(fontSize: 14),
-                      decoration: const InputDecoration(
-                        labelText: 'Custom Policy Directory',
-                        hintText: 'Optional: path to .rego files',
-                        prefixIcon: Icon(Icons.folder_outlined, size: 18),
-                      ),
-                    ),
-                  if (!kIsWeb) const SizedBox(height: 16),
                   SwitchListTile(
                     title: const Text(
                       'Fail on Violation',
@@ -414,47 +407,125 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.cloud_outlined,
+              const Icon(Icons.settings_outlined,
                   size: 20, color: AppColors.accentPurple),
-              SizedBox(width: 8),
-              Text(
-                'AWS Configuration',
+              const SizedBox(width: 8),
+              const Text(
+                'Config File',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
                 ),
               ),
+              const Spacer(),
+              Text(
+                _selectedConfigPath,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontFamily: 'monospace',
+                  color: AppColors.textTertiary,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _awsProfileController,
-                  style: const TextStyle(fontSize: 14),
-                  decoration: const InputDecoration(
-                    labelText: 'AWS Profile',
-                    hintText: 'default',
+          if (_loadingConfig)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else ...[
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _awsProfileController,
+                    style: const TextStyle(fontSize: 14),
+                    decoration: const InputDecoration(
+                      labelText: 'AWS Profile',
+                      hintText: 'default',
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: TextField(
-                  controller: _regionController,
-                  style: const TextStyle(fontSize: 14),
-                  decoration: const InputDecoration(
-                    labelText: 'Region',
-                    hintText: 'us-east-1',
+                const SizedBox(width: 16),
+                Expanded(
+                  child: TextField(
+                    controller: _regionController,
+                    style: const TextStyle(fontSize: 14),
+                    decoration: const InputDecoration(
+                      labelText: 'Region',
+                      hintText: 'us-east-1',
+                    ),
                   ),
                 ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _policyDirController,
+              style: const TextStyle(fontSize: 14),
+              decoration: const InputDecoration(
+                labelText: 'Custom Policy Directory',
+                hintText: 'Optional: path to .rego files',
+                prefixIcon: Icon(Icons.folder_outlined, size: 18),
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                ElevatedButton.icon(
+                  onPressed: (_savingConfig || !_configLoaded)
+                      ? null
+                      : _saveConfigToApi,
+                  icon: _savingConfig
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Icon(Icons.save, size: 16),
+                  label: const Text('Save Config'),
+                ),
+                const SizedBox(width: 12),
+                OutlinedButton.icon(
+                  onPressed: _loadingConfig ? null : _loadConfigFromApi,
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: const Text('Reload'),
+                ),
+                if (_configMessage != null) ...[
+                  const SizedBox(width: 16),
+                  Icon(
+                    _configMessageIsError
+                        ? Icons.error
+                        : Icons.check_circle,
+                    size: 16,
+                    color: _configMessageIsError
+                        ? AppColors.critical
+                        : AppColors.low,
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      _configMessage!,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: _configMessageIsError
+                            ? AppColors.critical
+                            : AppColors.low,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
         ],
       ),
     );

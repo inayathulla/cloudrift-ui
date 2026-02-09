@@ -143,8 +143,14 @@ class ConfigDatasource {
     }
   }
 
-  /// Saves plan JSON content to the API.
+  /// Saves plan JSON content to the API (web) or local file (desktop).
   Future<void> savePlanJson(String path, String jsonContent) async {
+    if (!kIsWeb) {
+      final file = File(path);
+      await file.parent.create(recursive: true);
+      await file.writeAsString(jsonContent);
+      return;
+    }
     try {
       final uri = Uri.parse('$_apiBaseUrl/api/files/plan').replace(
         queryParameters: {'path': path},
