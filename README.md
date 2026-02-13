@@ -97,7 +97,7 @@ Release 2 adds **web/Docker deployment**, a **hybrid Resource Builder**, **compl
 
 ## Screenshots
 
-> All screenshots below are from the **web version running in Docker** (`docker run -p 8080:80 cloudrift-ui`).
+> All screenshots below are from the **Flutter web version** at 2x retina resolution (2880x1800).
 > The desktop app renders identically — same screens, same layout, same features.
 
 ### Dashboard — KPIs, Drift Trends & Framework Compliance
