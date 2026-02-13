@@ -24,6 +24,12 @@ class PolicyViolation {
   /// Suggested fix for the violation, if available.
   final String remediation;
 
+  /// Policy category: `security`, `tagging`, or `cost`.
+  final String category;
+
+  /// Compliance frameworks this violation maps to (e.g. `["hipaa", "pci_dss"]`).
+  final List<String> frameworks;
+
   const PolicyViolation({
     required this.policyId,
     required this.policyName,
@@ -32,6 +38,8 @@ class PolicyViolation {
     required this.resourceType,
     required this.resourceAddress,
     this.remediation = '',
+    this.category = '',
+    this.frameworks = const [],
   });
 
   factory PolicyViolation.fromJson(Map<String, dynamic> json) {
@@ -43,6 +51,11 @@ class PolicyViolation {
       resourceType: json['resource_type'] as String? ?? '',
       resourceAddress: json['resource_address'] as String? ?? '',
       remediation: json['remediation'] as String? ?? '',
+      category: json['category'] as String? ?? '',
+      frameworks: (json['frameworks'] as List<dynamic>?)
+              ?.map((f) => f as String)
+              .toList() ??
+          [],
     );
   }
 
@@ -54,5 +67,7 @@ class PolicyViolation {
         'resource_type': resourceType,
         'resource_address': resourceAddress,
         'remediation': remediation,
+        'category': category,
+        'frameworks': frameworks,
       };
 }

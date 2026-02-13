@@ -216,7 +216,6 @@ ScanResult _buildLatestScanResult(DateTime now) {
     ],
     policyResult: EvaluationResult(
       violations: [
-        // Security violations (3 unique policy IDs)
         PolicyViolation(
           policyId: 'S3-001',
           policyName: 'S3 Encryption Required',
@@ -225,6 +224,8 @@ ScanResult _buildLatestScanResult(DateTime now) {
           resourceType: 'aws_s3_bucket',
           resourceAddress: 'aws_s3_bucket.app_data',
           remediation: 'Re-enable aws:kms encryption with the designated KMS key',
+          category: 'security',
+          frameworks: ['hipaa', 'pci_dss', 'iso_27001', 'gdpr', 'soc2'],
         ),
         PolicyViolation(
           policyId: 'S3-003',
@@ -234,6 +235,8 @@ ScanResult _buildLatestScanResult(DateTime now) {
           resourceType: 'aws_s3_bucket',
           resourceAddress: 'aws_s3_bucket.logs',
           remediation: 'Set block_public_acls = true in aws_s3_bucket_public_access_block',
+          category: 'security',
+          frameworks: ['hipaa', 'gdpr', 'pci_dss', 'iso_27001', 'soc2'],
         ),
         PolicyViolation(
           policyId: 'S3-006',
@@ -243,8 +246,9 @@ ScanResult _buildLatestScanResult(DateTime now) {
           resourceType: 'aws_s3_bucket',
           resourceAddress: 'aws_s3_bucket.logs',
           remediation: 'Set restrict_public_buckets = true in aws_s3_bucket_public_access_block',
+          category: 'security',
+          frameworks: ['hipaa', 'gdpr', 'pci_dss', 'iso_27001', 'soc2'],
         ),
-        // Tagging violations (2 unique policy IDs)
         PolicyViolation(
           policyId: 'TAG-001',
           policyName: 'Environment Tag Required',
@@ -253,6 +257,8 @@ ScanResult _buildLatestScanResult(DateTime now) {
           resourceType: 'aws_s3_bucket',
           resourceAddress: 'aws_s3_bucket.config',
           remediation: 'Restore the Environment tag to the correct value',
+          category: 'tagging',
+          frameworks: ['soc2'],
         ),
         PolicyViolation(
           policyId: 'TAG-003',
@@ -262,16 +268,17 @@ ScanResult _buildLatestScanResult(DateTime now) {
           resourceType: 'aws_s3_bucket',
           resourceAddress: 'aws_s3_bucket.analytics',
           remediation: 'Add Project tag to enable cost tracking',
+          category: 'tagging',
         ),
-        // Cost violation (1 unique policy ID)
         PolicyViolation(
           policyId: 'COST-003',
-          policyName: 'Lifecycle Rules Missing',
+          policyName: 'Previous Generation Instance',
           message: 'Lifecycle transition rules have been disabled',
           severity: 'medium',
           resourceType: 'aws_s3_bucket',
           resourceAddress: 'aws_s3_bucket.static_assets',
           remediation: 'Re-enable lifecycle rules to transition objects to cheaper storage classes',
+          category: 'cost',
         ),
       ],
       warnings: [
@@ -283,6 +290,8 @@ ScanResult _buildLatestScanResult(DateTime now) {
           resourceType: 'aws_s3_bucket',
           resourceAddress: 'aws_s3_bucket.cdn_origin',
           remediation: 'Consider upgrading to aws:kms encryption',
+          category: 'security',
+          frameworks: ['hipaa', 'pci_dss', 'soc2'],
         ),
         PolicyViolation(
           policyId: 'TAG-002',
@@ -292,6 +301,7 @@ ScanResult _buildLatestScanResult(DateTime now) {
           resourceType: 'aws_s3_bucket',
           resourceAddress: 'aws_s3_bucket.backups',
           remediation: 'Add Owner tag with responsible team',
+          category: 'tagging',
         ),
         PolicyViolation(
           policyId: 'S3-009',
@@ -301,9 +311,11 @@ ScanResult _buildLatestScanResult(DateTime now) {
           resourceType: 'aws_s3_bucket',
           resourceAddress: 'aws_s3_bucket.static_assets',
           remediation: 'Enable versioning on the S3 bucket',
+          category: 'security',
+          frameworks: ['iso_27001', 'soc2'],
         ),
       ],
-      passed: 15,
+      passed: 43,
       failed: 6,
     ),
     scanDurationMs: 3245,
@@ -360,6 +372,8 @@ ScanResult _buildSecondScanResult(DateTime now) {
           resourceType: 'aws_instance',
           resourceAddress: 'aws_instance.web_server',
           remediation: 'Set metadata_options.http_tokens = required',
+          category: 'security',
+          frameworks: ['hipaa', 'pci_dss', 'iso_27001', 'soc2'],
         ),
         PolicyViolation(
           policyId: 'EC2-002',
@@ -369,6 +383,8 @@ ScanResult _buildSecondScanResult(DateTime now) {
           resourceType: 'aws_instance',
           resourceAddress: 'aws_instance.api_server',
           remediation: 'Set encrypted = true in root_block_device',
+          category: 'security',
+          frameworks: ['hipaa', 'pci_dss', 'iso_27001', 'gdpr', 'soc2'],
         ),
         PolicyViolation(
           policyId: 'EC2-003',
@@ -378,6 +394,8 @@ ScanResult _buildSecondScanResult(DateTime now) {
           resourceType: 'aws_instance',
           resourceAddress: 'aws_instance.worker',
           remediation: 'Remove associate_public_ip_address or use NAT gateway',
+          category: 'security',
+          frameworks: ['hipaa', 'pci_dss', 'soc2'],
         ),
         PolicyViolation(
           policyId: 'TAG-001',
@@ -387,6 +405,8 @@ ScanResult _buildSecondScanResult(DateTime now) {
           resourceType: 'aws_instance',
           resourceAddress: 'aws_instance.worker',
           remediation: 'Restore Environment tag to correct value',
+          category: 'tagging',
+          frameworks: ['soc2'],
         ),
       ],
       warnings: [
@@ -398,6 +418,7 @@ ScanResult _buildSecondScanResult(DateTime now) {
           resourceType: 'aws_instance',
           resourceAddress: 'aws_instance.web_server',
           remediation: 'Consider right-sizing based on actual utilization',
+          category: 'cost',
         ),
         PolicyViolation(
           policyId: 'TAG-002',
@@ -407,9 +428,10 @@ ScanResult _buildSecondScanResult(DateTime now) {
           resourceType: 'aws_instance',
           resourceAddress: 'aws_instance.api_server',
           remediation: 'Add Owner tag with responsible team',
+          category: 'tagging',
         ),
       ],
-      passed: 17,
+      passed: 45,
       failed: 4,
     ),
     scanDurationMs: 4521,

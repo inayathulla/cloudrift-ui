@@ -546,6 +546,7 @@ class _FrameworkBadge extends StatelessWidget {
     ComplianceFramework.gdpr => const Color(0xFF81C784),
     ComplianceFramework.iso27001 => const Color(0xFFFFB74D),
     ComplianceFramework.pciDss => const Color(0xFFE57373),
+    ComplianceFramework.soc2 => const Color(0xFFCE93D8),
   };
 
   @override
@@ -882,4 +883,5 @@ Color _frameworkColor(ComplianceFramework f) => switch (f) {
   ComplianceFramework.gdpr => const Color(0xFF81C784),
   ComplianceFramework.iso27001 => const Color(0xFFFFB74D),
   ComplianceFramework.pciDss => const Color(0xFFE57373),
+  ComplianceFramework.soc2 => const Color(0xFFCE93D8),
 };

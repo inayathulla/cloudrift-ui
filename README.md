@@ -67,8 +67,8 @@ Both modes share the same codebase, the same 7 screens, and full feature parity 
 |---------|-------------|
 | **Real-time Scanning** | Invoke Cloudrift scans from the UI with service and config selection |
 | **Drift Visualization** | Three-column diff viewer: Attribute / Expected (Terraform) / Actual (AWS) |
-| **Policy Dashboard** | 21 built-in OPA policies with severity filters, framework badges, and remediation guidance |
-| **Compliance Frameworks** | HIPAA, GDPR, ISO 27001, PCI DSS framework mapping with per-framework compliance rings |
+| **Policy Dashboard** | 49 built-in OPA policies with severity filters, framework badges, and remediation guidance |
+| **Compliance Frameworks** | HIPAA, GDPR, ISO 27001, PCI DSS, SOC 2 framework mapping with per-framework compliance rings |
 | **Compliance Scoring** | Animated compliance ring with category breakdowns (Security, Tagging, Cost) |
 | **Interactive Dashboard** | Clickable KPI cards with navigation, scan duration, framework compliance rings, top failing policies |
 | **Resource Builder** | Three modes: Terraform (auto-generate plan.json), Manual (S3/EC2 forms), Upload (drag & drop) |
@@ -87,7 +87,7 @@ Release 2 adds **web/Docker deployment**, a **hybrid Resource Builder**, **compl
 | **Docker / Web** | Single `docker build` produces a container with Flutter web app, Go API server, nginx reverse proxy, and Terraform binary |
 | **Go API Server** | Backend API wrapping the Cloudrift CLI for web mode — scan, config, health, version, Terraform plan generation |
 | **Resource Builder** | Three-mode builder: **Terraform** (upload .tf files → auto plan.json), **Manual** (S3/EC2 forms), **Upload** (drag & drop plan.json) |
-| **Compliance Frameworks** | Policies mapped to HIPAA, GDPR, ISO 27001, PCI DSS with filterable badges |
+| **Compliance Frameworks** | Policies mapped to HIPAA, GDPR, ISO 27001, PCI DSS, SOC 2 with filterable badges |
 | **Dashboard Enhancements** | Clickable KPI cards with navigation, framework compliance rings, top failing policies section, scan duration display |
 | **Policies Screen** | Severity sorting, framework/severity/status filters, violation counts in tab headers |
 | **Navigation** | Per-destination accent colors (blue, teal, purple, pink, orange, green, gray) instead of uniform blue |
@@ -101,7 +101,7 @@ Release 2 adds **web/Docker deployment**, a **hybrid Resource Builder**, **compl
 > The desktop app renders identically — same screens, same layout, same features.
 
 ### Dashboard — KPIs, Drift Trends & Framework Compliance
-Clickable KPI cards that navigate to related screens, live drift trend chart, severity donut breakdown, HIPAA/GDPR/ISO 27001/PCI DSS compliance rings, and top failing policies — all at a glance.
+Clickable KPI cards that navigate to related screens, live drift trend chart, severity donut breakdown, HIPAA/GDPR/ISO 27001/PCI DSS/SOC 2 compliance rings, and top failing policies — all at a glance.
 
 ![Dashboard](assets/screenshots/01_dashboard.png)
 
@@ -131,8 +131,8 @@ Filter resources by service type, severity level, or search by name. Each card s
 
 ---
 
-### Policy Dashboard — 21 OPA Policies with Compliance Mapping
-Every policy is mapped to compliance frameworks (HIPAA, GDPR, ISO 27001, PCI DSS). Filter by severity, framework, or pass/fail status. Violation counts show in tab headers.
+### Policy Dashboard — 49 OPA Policies with Compliance Mapping
+Every policy is mapped to compliance frameworks (HIPAA, GDPR, ISO 27001, PCI DSS, SOC 2). Filter by severity, framework, or pass/fail status. Violation counts show in tab headers.
 
 ![Policies](assets/screenshots/05_policies.png)
 
@@ -331,12 +331,12 @@ Override in **Settings > Cloudrift CLI**.
 
 | Screen | Route | Description |
 |--------|-------|-------------|
-| **Dashboard** | `/dashboard` | Clickable KPI cards (navigate to related screens), drift trend chart, severity donut, framework compliance rings (HIPAA/GDPR/ISO/PCI), top failing policies |
+| **Dashboard** | `/dashboard` | Clickable KPI cards (navigate to related screens), drift trend chart, severity donut, framework compliance rings (HIPAA/GDPR/ISO/PCI/SOC2), top failing policies |
 | **Scan** | `/scan` | Service selector (S3/EC2), config path, scan trigger with timer, history table with human-readable durations |
 | **Builder** | `/resource-builder` | Three modes: **Terraform** (upload .tf → auto plan.json), **Manual** (S3/EC2 resource forms), **Upload** (drag & drop plan.json) |
 | **Resources** | `/resources` | Stat chips, filter bar (service/severity/search), clickable resource cards |
 | **Resource Detail** | `/resources/:id` | Three-column diff viewer (Attribute/Expected/Actual), policy violations with remediation |
-| **Policies** | `/policies` | Tabbed (All/Security/Tagging/Cost), severity sorting, framework/severity/status filters, compliance badges (HIPAA/GDPR/ISO/PCI), violation counts |
+| **Policies** | `/policies` | Tabbed (All/Security/Tagging/Cost), severity sorting, framework/severity/status filters, compliance badges (HIPAA/GDPR/ISO/PCI/SOC2), violation counts |
 | **Compliance** | `/compliance` | Animated compliance ring, category cards with mini rings, trend chart |
 | **Settings** | `/settings` | CLI path, AWS config, scan defaults, data management |
 
@@ -396,7 +396,7 @@ cloudrift-ui/
 │   │   │   ├── app_colors.dart               # Color palette (dark theme)
 │   │   │   └── app_theme.dart                # Material 3 ThemeData
 │   │   └── constants/
-│   │       └── policy_catalog.dart           # 21 policy definitions + compliance frameworks
+│   │       └── policy_catalog.dart           # 49 policy definitions + compliance frameworks
 │   ├── data/
 │   │   ├── models/
 │   │   │   ├── scan_result.dart              # CLI JSON output model
