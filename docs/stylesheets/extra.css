@@ -1,13 +1,32 @@
-/* Cloudrift docs — light-first theme with dark mode toggle */
+/* Cloudrift docs theme
+ *
+ * Light mode: Material indigo (built-in, no overrides needed)
+ * Dark mode:  Exact match of Cloudrift app — app_colors.dart
+ *
+ * Palette reference (from lib/core/theme/app_colors.dart):
+ *   background:      #0F1419
+ *   cardBackground:  #1A1F28
+ *   surfaceElevated: #212832
+ *   border:          #2A3441
+ *   textPrimary:     #E8EAED
+ *   textSecondary:   #8B95A5
+ *   textTertiary:    #5A6577
+ *   accentBlue:      #4A9EFF
+ *   accentPurple:    #9B6DFF
+ *   accentTeal:      #00D4AA
+ *   critical:        #FF3B30
+ *   high:            #FF9500
+ *   medium:          #FFCC00
+ *   low:             #34C759
+ *   info:            #00B4D8
+ */
 
-/* ─── Screenshot images ───────────────────────────────────────────────── */
+/* ─── Shared (light + dark) ───────────────────────────────────────────── */
 
 .md-typeset img {
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
 }
-
-/* ─── Grid cards ──────────────────────────────────────────────────────── */
 
 .grid.cards > ul > li {
   border-radius: 8px;
@@ -19,101 +38,360 @@
   transform: translateY(-2px);
 }
 
-/* ─── Severity badges (inline) ────────────────────────────────────────── */
+/* ─── Severity badges ─────────────────────────────────────────────────── */
 
-.severity-critical {
-  background: #D32F2F;
-  color: #fff;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 0.75em;
-  font-weight: 600;
-}
-
-.severity-high {
-  background: #E65100;
-  color: #fff;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 0.75em;
-  font-weight: 600;
-}
-
-.severity-medium {
-  background: #F9A825;
-  color: #1A1A1A;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 0.75em;
-  font-weight: 600;
-}
-
-.severity-low {
-  background: #2E7D32;
-  color: #fff;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 0.75em;
-  font-weight: 600;
-}
+.severity-critical { background: #FF3B30; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; }
+.severity-high     { background: #FF9500; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; }
+.severity-medium   { background: #FFCC00; color: #1A1F28; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; }
+.severity-low      { background: #34C759; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; }
 
 /* ─── Severity admonitions ────────────────────────────────────────────── */
 
-.md-typeset .admonition.critical,
-.md-typeset details.critical {
-  border-color: #D32F2F;
-}
-.md-typeset .critical > .admonition-title,
-.md-typeset .critical > summary {
-  background-color: rgba(211, 47, 47, 0.1);
-}
+.md-typeset .admonition.critical, .md-typeset details.critical { border-color: #FF3B30; }
+.md-typeset .critical > .admonition-title, .md-typeset .critical > summary { background-color: rgba(255, 59, 48, 0.1); }
 
-.md-typeset .admonition.high,
-.md-typeset details.high {
-  border-color: #E65100;
-}
-.md-typeset .high > .admonition-title,
-.md-typeset .high > summary {
-  background-color: rgba(230, 81, 0, 0.1);
-}
+.md-typeset .admonition.high, .md-typeset details.high { border-color: #FF9500; }
+.md-typeset .high > .admonition-title, .md-typeset .high > summary { background-color: rgba(255, 149, 0, 0.1); }
 
-.md-typeset .admonition.medium,
-.md-typeset details.medium {
-  border-color: #F9A825;
-}
-.md-typeset .medium > .admonition-title,
-.md-typeset .medium > summary {
-  background-color: rgba(249, 168, 37, 0.1);
-}
+.md-typeset .admonition.medium, .md-typeset details.medium { border-color: #FFCC00; }
+.md-typeset .medium > .admonition-title, .md-typeset .medium > summary { background-color: rgba(255, 204, 0, 0.1); }
 
-.md-typeset .admonition.low,
-.md-typeset details.low {
-  border-color: #2E7D32;
-}
-.md-typeset .low > .admonition-title,
-.md-typeset .low > summary {
-  background-color: rgba(46, 125, 50, 0.1);
-}
+.md-typeset .admonition.low, .md-typeset details.low { border-color: #34C759; }
+.md-typeset .low > .admonition-title, .md-typeset .low > summary { background-color: rgba(52, 199, 89, 0.1); }
 
-/* ─── Slate (dark) toggle overrides ───────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════
+ *  SLATE (DARK) — mirrors Cloudrift app exactly
+ * ═══════════════════════════════════════════════════════════════════════ */
 
 [data-md-color-scheme="slate"] {
-  --md-default-bg-color: #1a1a2e;
-  --md-default-fg-color: #e0e0e0;
-  --md-default-fg-color--light: #a0a0a0;
-  --md-default-fg-color--lighter: #707070;
-  --md-default-fg-color--lightest: #404040;
-  --md-code-bg-color: #16213e;
-  --md-code-fg-color: #e0e0e0;
-  --md-typeset-a-color: #7c8cf8;
-  --md-typeset-table-color: rgba(255, 255, 255, 0.06);
-  --md-typeset-table-color--light: rgba(255, 255, 255, 0.02);
-  --md-footer-bg-color: #16213e;
-  --md-footer-fg-color: #a0a0a0;
-  --md-footer-fg-color--light: #707070;
-  --md-footer-fg-color--lighter: #404040;
+  /* Backgrounds — AppColors.background / cardBackground / surfaceElevated / border */
+  --md-default-bg-color: #0F1419;
+  --md-default-bg-color--light: #1A1F28;
+
+  /* Text — AppColors.textPrimary / textSecondary / textTertiary */
+  --md-default-fg-color: #E8EAED;
+  --md-default-fg-color--light: #8B95A5;
+  --md-default-fg-color--lighter: #5A6577;
+  --md-default-fg-color--lightest: #2A3441;
+
+  /* Primary — AppColors.accentBlue */
+  --md-primary-fg-color: #4A9EFF;
+  --md-primary-fg-color--light: #6DB3FF;
+  --md-primary-fg-color--dark: #3080D9;
+  --md-primary-bg-color: #1A1F28;
+  --md-primary-bg-color--light: #212832;
+
+  /* Accent — AppColors.accentPurple */
+  --md-accent-fg-color: #9B6DFF;
+  --md-accent-fg-color--transparent: rgba(155, 109, 255, 0.12);
+
+  /* Typography */
+  --md-typeset-color: #E8EAED;
+  --md-typeset-a-color: #4A9EFF;
+
+  /* Code — card background for code blocks */
+  --md-code-bg-color: #1A1F28;
+  --md-code-fg-color: #E8EAED;
+  --md-code-hl-color: rgba(74, 158, 255, 0.15);
+  --md-code-hl-number-color: #FF9500;
+  --md-code-hl-string-color: #34C759;
+  --md-code-hl-keyword-color: #9B6DFF;
+  --md-code-hl-name-color: #4A9EFF;
+  --md-code-hl-operator-color: #FF6B8A;
+  --md-code-hl-punctuation-color: #8B95A5;
+  --md-code-hl-comment-color: #5A6577;
+  --md-code-hl-generic-color: #E8EAED;
+  --md-code-hl-variable-color: #FF6B8A;
+  --md-code-hl-function-color: #00D4AA;
+  --md-code-hl-constant-color: #FF9500;
+  --md-code-hl-special-color: #FF3B30;
+
+  /* Tables */
+  --md-typeset-table-color: #2A3441;
+  --md-typeset-table-color--light: rgba(42, 52, 65, 0.5);
+
+  /* Footer */
+  --md-footer-bg-color: #1A1F28;
+  --md-footer-bg-color--dark: #0F1419;
+  --md-footer-fg-color: #8B95A5;
+  --md-footer-fg-color--light: #5A6577;
+  --md-footer-fg-color--lighter: #2A3441;
+
+  /* Shadows */
+  --md-shadow-z1: 0 2px 8px rgba(0, 0, 0, 0.5);
+  --md-shadow-z2: 0 4px 16px rgba(0, 0, 0, 0.6);
+  --md-shadow-z3: 0 8px 28px rgba(0, 0, 0, 0.7);
 }
 
+/* ─── Header — cardBackground with border ─────────────────────────────── */
+
+[data-md-color-scheme="slate"] .md-header {
+  background-color: #1A1F28;
+  border-bottom: 1px solid #2A3441;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+[data-md-color-scheme="slate"] .md-tabs {
+  background-color: #1A1F28;
+  border-bottom: 1px solid #2A3441;
+}
+
+[data-md-color-scheme="slate"] .md-tabs__link {
+  color: #8B95A5;
+  opacity: 1;
+}
+
+[data-md-color-scheme="slate"] .md-tabs__link:hover {
+  color: #E8EAED;
+}
+
+[data-md-color-scheme="slate"] .md-tabs__link--active {
+  color: #4A9EFF;
+}
+
+/* ─── Sidebar — app background with border ────────────────────────────── */
+
+[data-md-color-scheme="slate"] .md-sidebar {
+  background-color: #0F1419;
+  border-right: 1px solid #2A3441;
+}
+
+[data-md-color-scheme="slate"] .md-nav__link {
+  color: #8B95A5;
+}
+
+[data-md-color-scheme="slate"] .md-nav__link:hover {
+  color: #E8EAED;
+}
+
+[data-md-color-scheme="slate"] .md-nav__link--active {
+  color: #4A9EFF;
+  font-weight: 600;
+}
+
+[data-md-color-scheme="slate"] .md-nav__item--nested > .md-nav__link {
+  color: #E8EAED;
+}
+
+/* ─── Table of Contents (right sidebar) ───────────────────────────────── */
+
+[data-md-color-scheme="slate"] .md-sidebar--secondary {
+  border-right: none;
+  border-left: 1px solid #2A3441;
+}
+
+[data-md-color-scheme="slate"] .md-sidebar--secondary .md-nav__link {
+  color: #5A6577;
+}
+
+[data-md-color-scheme="slate"] .md-sidebar--secondary .md-nav__link:hover {
+  color: #8B95A5;
+}
+
+[data-md-color-scheme="slate"] .md-sidebar--secondary .md-nav__link--active {
+  color: #4A9EFF;
+}
+
+/* ─── Search — surfaceElevated with border ────────────────────────────── */
+
+[data-md-color-scheme="slate"] .md-search__form {
+  background-color: #212832;
+  border: 1px solid #2A3441;
+}
+
+[data-md-color-scheme="slate"] .md-search__input {
+  color: #E8EAED;
+}
+
+[data-md-color-scheme="slate"] .md-search__input::placeholder {
+  color: #5A6577;
+}
+
+[data-md-color-scheme="slate"] .md-search-result__meta {
+  background-color: #1A1F28;
+  color: #8B95A5;
+}
+
+[data-md-color-scheme="slate"] .md-search-result__item {
+  border-bottom-color: #2A3441;
+}
+
+/* ─── Content ─────────────────────────────────────────────────────────── */
+
+[data-md-color-scheme="slate"] .md-typeset hr {
+  border-bottom-color: #2A3441;
+}
+
+[data-md-color-scheme="slate"] .md-typeset blockquote {
+  border-left-color: #4A9EFF;
+  color: #8B95A5;
+}
+
+/* ─── Tables — surfaceElevated header, border dividers ────────────────── */
+
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) {
+  border: 1px solid #2A3441;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) th {
+  background-color: #212832;
+  color: #8B95A5;
+  font-weight: 600;
+  border-bottom: 1px solid #2A3441;
+}
+
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) td {
+  border-top-color: #2A3441;
+}
+
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) tr:hover td {
+  background-color: rgba(74, 158, 255, 0.04);
+}
+
+/* ─── Inline code — surfaceElevated bg ────────────────────────────────── */
+
+[data-md-color-scheme="slate"] .md-typeset code {
+  background-color: #212832;
+  color: #FF6B8A;
+  border-radius: 4px;
+}
+
+[data-md-color-scheme="slate"] .md-typeset pre > code {
+  background-color: #1A1F28;
+  color: #E8EAED;
+}
+
+[data-md-color-scheme="slate"] .highlight .hll {
+  background-color: rgba(74, 158, 255, 0.12);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .md-clipboard {
+  color: #5A6577;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .md-clipboard:hover {
+  color: #4A9EFF;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .linenodiv pre {
+  color: #2A3441;
+}
+
+/* ─── Buttons — accentBlue primary ────────────────────────────────────── */
+
+[data-md-color-scheme="slate"] .md-typeset .md-button {
+  border: 1px solid #2A3441;
+  color: #4A9EFF;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .md-button:hover {
+  background-color: rgba(74, 158, 255, 0.08);
+  border-color: #4A9EFF;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .md-button--primary {
+  background-color: #4A9EFF;
+  border-color: #4A9EFF;
+  color: #fff;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .md-button--primary:hover {
+  background-color: #6DB3FF;
+  border-color: #6DB3FF;
+}
+
+/* ─── Grid cards — cardBackground with border ─────────────────────────── */
+
+[data-md-color-scheme="slate"] .grid.cards > ul > li {
+  background-color: #1A1F28;
+  border: 1px solid #2A3441;
+  border-radius: 12px;
+}
+
+[data-md-color-scheme="slate"] .grid.cards > ul > li:hover {
+  border-color: rgba(74, 158, 255, 0.4);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  transform: translateY(-2px);
+}
+
+[data-md-color-scheme="slate"] .grid.cards > ul > li hr {
+  border-bottom-color: #2A3441;
+}
+
+/* ─── Tabbed content ──────────────────────────────────────────────────── */
+
+[data-md-color-scheme="slate"] .md-typeset .tabbed-labels > label {
+  color: #8B95A5;
+  border-bottom-color: transparent;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .tabbed-labels > label:hover {
+  color: #E8EAED;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .tabbed-labels > .tabbed-label--active {
+  color: #4A9EFF;
+}
+
+/* ─── Admonitions — cardBackground ────────────────────────────────────── */
+
+[data-md-color-scheme="slate"] .md-typeset .admonition,
+[data-md-color-scheme="slate"] .md-typeset details {
+  background-color: #1A1F28;
+  border-left-width: 3px;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition > .admonition-title,
+[data-md-color-scheme="slate"] .md-typeset details > summary {
+  background-color: #212832;
+}
+
+/* ─── Screenshots ─────────────────────────────────────────────────────── */
+
 [data-md-color-scheme="slate"] .md-typeset img {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* ─── Mermaid ─────────────────────────────────────────────────────────── */
+
+[data-md-color-scheme="slate"] .mermaid {
+  --mermaid-font-family: "Inter", sans-serif;
+}
+
+/* ─── Footer ──────────────────────────────────────────────────────────── */
+
+[data-md-color-scheme="slate"] .md-footer {
+  border-top: 1px solid #2A3441;
+}
+
+[data-md-color-scheme="slate"] .md-footer-nav__link {
+  color: #8B95A5;
+}
+
+[data-md-color-scheme="slate"] .md-footer-nav__link:hover {
+  color: #4A9EFF;
+}
+
+/* ─── Scrollbar ───────────────────────────────────────────────────────── */
+
+[data-md-color-scheme="slate"] ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+[data-md-color-scheme="slate"] ::-webkit-scrollbar-track {
+  background: #0F1419;
+}
+
+[data-md-color-scheme="slate"] ::-webkit-scrollbar-thumb {
+  background: #2A3441;
+  border-radius: 4px;
+}
+
+[data-md-color-scheme="slate"] ::-webkit-scrollbar-thumb:hover {
+  background: #5A6577;
 }
