@@ -1,0 +1,102 @@
+/* Cloudrift dark theme — matches AppColors from app_colors.dart */
+
+:root {
+  /* Severity palette */
+  --cr-critical: #FF3B30;
+  --cr-high: #FF9500;
+  --cr-medium: #FFCC00;
+  --cr-low: #34C759;
+  --cr-info: #00B4D8;
+
+  /* Accent palette */
+  --cr-accent-blue: #4A9EFF;
+  --cr-accent-purple: #9B6DFF;
+  --cr-accent-teal: #00D4AA;
+}
+
+/* Slate (dark) overrides */
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #4A9EFF;
+  --md-primary-bg-color: #0F1419;
+  --md-accent-fg-color: #9B6DFF;
+  --md-default-bg-color: #0F1419;
+  --md-default-fg-color: #E8EAED;
+  --md-code-bg-color: #1A1F28;
+  --md-code-fg-color: #E8EAED;
+  --md-footer-bg-color: #1A1F28;
+  --md-typeset-a-color: #4A9EFF;
+}
+
+[data-md-color-scheme="slate"] .md-header {
+  background-color: #1A1F28;
+}
+
+[data-md-color-scheme="slate"] .md-tabs {
+  background-color: #1A1F28;
+}
+
+[data-md-color-scheme="slate"] .md-nav__link--active {
+  color: #4A9EFF;
+}
+
+/* Severity badges */
+.severity-critical {
+  background: #FF3B30;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75em;
+  font-weight: 600;
+}
+
+.severity-high {
+  background: #FF9500;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75em;
+  font-weight: 600;
+}
+
+.severity-medium {
+  background: #FFCC00;
+  color: #1A1F28;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75em;
+  font-weight: 600;
+}
+
+.severity-low {
+  background: #34C759;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75em;
+  font-weight: 600;
+}
+
+/* Screenshot images — rounded corners + shadow */
+.md-typeset img {
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Admonition severity colors */
+.md-typeset .admonition.critical,
+.md-typeset details.critical {
+  border-color: #FF3B30;
+}
+.md-typeset .critical > .admonition-title,
+.md-typeset .critical > summary {
+  background-color: rgba(255, 59, 48, 0.1);
+}
+
+.md-typeset .admonition.high,
+.md-typeset details.high {
+  border-color: #FF9500;
+}
+.md-typeset .high > .admonition-title,
+.md-typeset .high > summary {
+  background-color: rgba(255, 149, 0, 0.1);
+}

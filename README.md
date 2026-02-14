@@ -14,6 +14,7 @@
   <a href="#"><img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows%20%7C%20Web-lightgrey?style=flat-square" alt="Platform"></a>
   <a href="https://hub.docker.com/r/inayathulla/cloudrift-ui"><img src="https://img.shields.io/badge/Docker_Hub-inayathulla%2Fcloudrift--ui-2496ED?logo=docker&style=flat-square" alt="Docker Hub"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue?style=flat-square" alt="License"></a>
+  <a href="https://inayathulla.github.io/cloudrift-ui/"><img src="https://img.shields.io/badge/Docs-MkDocs-blue?logo=readthedocs&style=flat-square" alt="Documentation"></a>
 </p>
 
 <p align="center">

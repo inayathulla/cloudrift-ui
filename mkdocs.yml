@@ -1,0 +1,100 @@
+site_name: Cloudrift
+site_description: AWS Infrastructure Drift Detection & Compliance Tool
+site_url: https://inayathulla.github.io/cloudrift-ui/
+repo_url: https://github.com/inayathulla/cloudrift-ui
+repo_name: inayathulla/cloudrift-ui
+
+theme:
+  name: material
+  custom_dir: docs/overrides
+  palette:
+    - scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  font:
+    text: Inter
+    code: JetBrains Mono
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.indexes
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+    - toc.follow
+
+extra_css:
+  - stylesheets/extra.css
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.mark
+  - pymdownx.critic
+  - pymdownx.keys
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+  - minify:
+      minify_html: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Quick Start: getting-started/quick-start.md
+    - Configuration: getting-started/configuration.md
+    - AWS Credentials: getting-started/aws-credentials.md
+  - Features:
+    - Dashboard: features/dashboard.md
+    - Scanning: features/scanning.md
+    - Resource Builder: features/resource-builder.md
+    - Drift Detection: features/drift-detection.md
+    - Policies: features/policies.md
+    - Compliance: features/compliance.md
+  - API Reference:
+    - Overview: api/overview.md
+    - Scan Endpoints: api/scan-endpoints.md
+    - Config Endpoints: api/config-endpoints.md
+    - File Endpoints: api/file-endpoints.md
+    - Terraform Endpoints: api/terraform-endpoints.md
+  - Architecture:
+    - Overview: architecture/overview.md
+    - Data Flow: architecture/data-flow.md
+    - State Management: architecture/state-management.md
+    - Deployment: architecture/deployment.md
+  - Development:
+    - Local Setup: development/local-setup.md
+    - Project Structure: development/project-structure.md
+    - Adding Screens: development/adding-screens.md
+    - Testing: development/testing.md
+  - Contributing: contributing.md
