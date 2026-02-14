@@ -42,6 +42,19 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
     super.dispose();
   }
 
+  void _switchService(String service) {
+    setState(() => _selectedService = service);
+    // Auto-update config path to match the selected service
+    final cli = ref.read(cliDatasourceProvider);
+    final repoDir = cli.cloudriftRepoDir;
+    if (repoDir.isNotEmpty) {
+      final configFile = service == 'ec2'
+          ? '$repoDir/config/cloudrift-ec2.yml'
+          : '$repoDir/config/cloudrift.yml';
+      _configPathController.text = configFile;
+    }
+  }
+
   void _startScan() {
     _elapsed = Duration.zero;
     _elapsedTimer?.cancel();
@@ -117,16 +130,14 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
                                   label: 'S3',
                                   icon: Icons.cloud_outlined,
                                   selected: _selectedService == 's3',
-                                  onTap: () =>
-                                      setState(() => _selectedService = 's3'),
+                                  onTap: () => _switchService('s3'),
                                 ),
                                 const SizedBox(width: 8),
                                 _ServiceChip(
                                   label: 'EC2',
                                   icon: Icons.computer_outlined,
                                   selected: _selectedService == 'ec2',
-                                  onTap: () =>
-                                      setState(() => _selectedService = 'ec2'),
+                                  onTap: () => _switchService('ec2'),
                                 ),
                               ],
                             ),
