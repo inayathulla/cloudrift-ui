@@ -10,7 +10,7 @@ import '../models/file_list_result.dart';
 import '../models/terraform_job.dart';
 import '../models/terraform_status.dart';
 
-/// Reads and writes `cloudrift.yml` configuration files.
+/// Reads and writes `cloudrift-<service>.yml` configuration files.
 ///
 /// - **Desktop**: Uses direct file system I/O.
 /// - **Web**: Calls the backend API server (proxied via nginx).
@@ -22,7 +22,7 @@ class ConfigDatasource {
   // Config file operations
   // ---------------------------------------------------------------------------
 
-  /// Loads and parses a `cloudrift.yml` file from [path].
+  /// Loads and parses a cloudrift config file from [path].
   Future<CloudriftConfig> loadConfig(String path) async {
     if (kIsWeb) return _loadConfigWeb(path);
     final file = File(path);

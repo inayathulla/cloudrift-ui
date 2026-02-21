@@ -42,7 +42,7 @@ docker run -p 8080:80 \
   inayathulla/cloudrift-ui:latest
 ```
 
-Then set `aws_profile: production` in your `cloudrift.yml`.
+Then set `aws_profile: production` in your `cloudrift-s3.yml`.
 
 ## Desktop Setup
 
@@ -100,8 +100,40 @@ Cloudrift needs **read-only** access to the services you're scanning:
 }
 ```
 
+### IAM Scanning
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "iam:GetRole",
+        "iam:ListRoles",
+        "iam:ListRolePolicies",
+        "iam:ListAttachedRolePolicies",
+        "iam:GetUser",
+        "iam:ListUsers",
+        "iam:ListUserPolicies",
+        "iam:ListAttachedUserPolicies",
+        "iam:GetPolicy",
+        "iam:GetPolicyVersion",
+        "iam:ListPolicies",
+        "iam:GetGroup",
+        "iam:ListGroups",
+        "iam:ListGroupPolicies",
+        "iam:ListAttachedGroupPolicies",
+        "iam:ListGroupsForUser"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
 !!! tip "Use AWS managed policies"
-    For quick setup, attach `ReadOnlyAccess` or the service-specific read-only policies like `AmazonS3ReadOnlyAccess` and `AmazonEC2ReadOnlyAccess`.
+    For quick setup, attach `ReadOnlyAccess` or the service-specific read-only policies like `AmazonS3ReadOnlyAccess`, `AmazonEC2ReadOnlyAccess`, and `IAMReadOnlyAccess`.
 
 ## Troubleshooting
 

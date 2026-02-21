@@ -39,7 +39,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _savingConfig = false;
   String? _configMessage;
   bool _configMessageIsError = false;
-  String _selectedConfigPath = 'config/cloudrift.yml';
+  String _selectedConfigPath = 'config/cloudrift-s3.yml';
   List<FileEntry> _availableConfigs = [];
 
   @override

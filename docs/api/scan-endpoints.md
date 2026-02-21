@@ -11,7 +11,7 @@ curl -X POST http://localhost:8080/api/scan \
   -H "Content-Type: application/json" \
   -d '{
     "service": "s3",
-    "config_path": "/etc/cloudrift/config/cloudrift.yml"
+    "config_path": "/etc/cloudrift/config/cloudrift-s3.yml"
   }'
 ```
 

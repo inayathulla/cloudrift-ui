@@ -10,8 +10,9 @@ Choose which AWS service to scan:
 
 | Service | Config File | Plan File |
 |---------|------------|-----------|
-| **S3** | `cloudrift.yml` | `plan.json` |
+| **S3** | `cloudrift-s3.yml` | `plan.json` |
 | **EC2** | `cloudrift-ec2.yml` | `ec2-plan.json` |
+| **IAM** | `cloudrift-iam.yml` | `iam-plan.json` |
 
 The config path auto-updates when you switch services.
 
@@ -19,7 +20,7 @@ The config path auto-updates when you switch services.
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| **Config Path** | Path to `cloudrift.yml` | Auto-detected |
+| **Config Path** | Path to `cloudrift-<service>.yml` | Auto-detected |
 | **Policy Directory** | Custom OPA policy directory | Built-in policies |
 | **Skip Policies** | Skip OPA policy evaluation | `false` |
 
@@ -41,7 +42,7 @@ On macOS desktop, the scan runs the CLI binary directly:
 
 ```bash
 cloudrift scan \
-  --config=cloudrift.yml \
+  --config=cloudrift-s3.yml \
   --service=s3 \
   --format=json \
   --no-emoji
@@ -59,7 +60,7 @@ Content-Type: application/json
 
 {
   "service": "s3",
-  "config_path": "/etc/cloudrift/config/cloudrift.yml"
+  "config_path": "/etc/cloudrift/config/cloudrift-s3.yml"
 }
 ```
 
@@ -83,7 +84,7 @@ The full set of CLI flags available for scanning:
 | Flag | Short | Description |
 |------|-------|-------------|
 | `--config` | `-c` | Path to config YAML file |
-| `--service` | `-s` | AWS service to scan (s3, ec2) |
+| `--service` | `-s` | AWS service to scan (s3, ec2, iam) |
 | `--format` | `-f` | Output format (json, table, text) |
 | `--no-emoji` | — | Disable emoji in output |
 | `--policy-dir` | `-p` | Custom OPA policy directory |

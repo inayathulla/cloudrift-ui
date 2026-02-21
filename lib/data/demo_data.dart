@@ -30,6 +30,10 @@ Future<void> seedDemoData(LocalStorageDatasource storage) async {
   final secondResult = _buildSecondScanResult(now);
   final secondJson = jsonEncode(secondResult.toJson());
 
+  // Third most recent — IAM scan with rawJson
+  final thirdResult = _buildIAMScanResult(now);
+  final thirdJson = jsonEncode(thirdResult.toJson());
+
   final entries = <ScanHistoryEntry>[
     // Entry 0: latest (1h ago) — S3 scan
     ScanHistoryEntry(
@@ -61,7 +65,22 @@ Future<void> seedDemoData(LocalStorageDatasource storage) async {
       rawJson: secondJson,
       status: 'completed',
     ),
-    // Entries 2-9: historical (summary only, for trend chart + history table)
+    // Entry 2: 12h ago — IAM scan
+    ScanHistoryEntry(
+      id: _uuid.v4(),
+      timestamp: now.subtract(const Duration(hours: 12)),
+      service: 'IAM',
+      region: 'us-east-1',
+      accountId: '123456789012',
+      totalResources: 6,
+      driftCount: 3,
+      policyViolations: 2,
+      policyWarnings: 1,
+      scanDurationMs: 2870,
+      rawJson: thirdJson,
+      status: 'completed',
+    ),
+    // Entries 3-10: historical (summary only, for trend chart + history table)
     ScanHistoryEntry(
       id: _uuid.v4(),
       timestamp: now.subtract(const Duration(hours: 24)),
@@ -320,6 +339,115 @@ ScanResult _buildLatestScanResult(DateTime now) {
     ),
     scanDurationMs: 3245,
     timestamp: now.subtract(const Duration(hours: 1)).toIso8601String(),
+  );
+}
+
+/// Builds an IAM scan result with 6 resources, 3 drifted,
+/// 2 violations, and 1 warning for IAM-specific policies.
+ScanResult _buildIAMScanResult(DateTime now) {
+  return ScanResult(
+    service: 'IAM',
+    accountId: '123456789012',
+    region: 'us-east-1',
+    totalResources: 6,
+    driftCount: 3,
+    drifts: [
+      // 1. CRITICAL — trust policy broadened
+      DriftInfo(
+        resourceId: 'lambda-exec-role',
+        resourceType: 'aws_iam_role',
+        resourceName: 'aws_iam_role.lambda_exec',
+        diffs: {
+          'assume_role_policy': ['lambda.amazonaws.com only', '* (any principal)'],
+        },
+        severity: 'critical',
+      ),
+      // 2. HIGH — policy document has wildcard action
+      DriftInfo(
+        resourceId: 'admin-policy',
+        resourceType: 'aws_iam_policy',
+        resourceName: 'aws_iam_policy.admin_policy',
+        diffs: {
+          'policy_document': ['s3:GetObject,s3:PutObject', '*'],
+        },
+        severity: 'high',
+      ),
+      // 3. MEDIUM — user tags changed
+      DriftInfo(
+        resourceId: 'deploy-user',
+        resourceType: 'aws_iam_user',
+        resourceName: 'aws_iam_user.deploy',
+        diffs: {
+          'tags.Environment': ['production', 'dev'],
+        },
+        extraAttributes: {
+          'tags.CreatedBy': 'manual-console',
+        },
+        severity: 'medium',
+      ),
+      // 4-6: Clean resources
+      DriftInfo(
+        resourceId: 'ecs-task-role',
+        resourceType: 'aws_iam_role',
+        resourceName: 'aws_iam_role.ecs_task',
+        severity: 'info',
+      ),
+      DriftInfo(
+        resourceId: 'readonly-user',
+        resourceType: 'aws_iam_user',
+        resourceName: 'aws_iam_user.readonly',
+        severity: 'info',
+      ),
+      DriftInfo(
+        resourceId: 'developers',
+        resourceType: 'aws_iam_group',
+        resourceName: 'aws_iam_group.developers',
+        severity: 'info',
+      ),
+    ],
+    policyResult: EvaluationResult(
+      violations: [
+        PolicyViolation(
+          policyId: 'IAM-001',
+          policyName: 'No Wildcard IAM Actions',
+          message: 'IAM policy admin-policy contains a wildcard (*) action',
+          severity: 'critical',
+          resourceType: 'aws_iam_policy',
+          resourceAddress: 'aws_iam_policy.admin_policy',
+          remediation: 'Replace wildcard Action with specific actions following least-privilege principle',
+          category: 'security',
+          frameworks: ['hipaa', 'pci_dss', 'iso_27001', 'gdpr', 'soc2'],
+        ),
+        PolicyViolation(
+          policyId: 'IAM-003',
+          policyName: 'IAM Role Trust Too Broad',
+          message: 'IAM role lambda-exec-role has overly broad trust policy',
+          severity: 'high',
+          resourceType: 'aws_iam_role',
+          resourceAddress: 'aws_iam_role.lambda_exec',
+          remediation: 'Restrict Principal to specific AWS accounts, services, or IAM entities',
+          category: 'security',
+          frameworks: ['pci_dss', 'iso_27001', 'soc2'],
+        ),
+      ],
+      warnings: [
+        PolicyViolation(
+          policyId: 'TAG-001',
+          policyName: 'Environment Tag Required',
+          message: 'Environment tag changed from production to dev',
+          severity: 'medium',
+          resourceType: 'aws_iam_user',
+          resourceAddress: 'aws_iam_user.deploy',
+          remediation: 'Restore Environment tag to correct value',
+          category: 'tagging',
+          frameworks: ['soc2'],
+        ),
+      ],
+      passed: 47,
+      failed: 2,
+    ),
+    scanDurationMs: 2870,
+    timestamp: now.subtract(const Duration(hours: 12)).toIso8601String(),
   );
 }
 

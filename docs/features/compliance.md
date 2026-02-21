@@ -77,7 +77,7 @@ The Compliance screen shows:
 Filter compliance output to specific frameworks:
 
 ```bash
-cloudrift scan --config=cloudrift.yml --service=s3 --frameworks=hipaa,pci_dss
+cloudrift scan --config=cloudrift-s3.yml --service=s3 --frameworks=hipaa,pci_dss
 ```
 
 Available framework keys: `hipaa`, `gdpr`, `iso_27001`, `pci_dss`, `soc2`

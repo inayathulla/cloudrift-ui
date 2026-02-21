@@ -36,11 +36,11 @@ Both modes share the same codebase, the same 7 screens, and full feature parity.
 
 | Feature | Description |
 |---------|-------------|
-| **Real-time Scanning** | Invoke scans from the UI with service and config selection |
+| **Real-time Scanning** | Invoke scans for S3, EC2, IAM (or all at once) with per-service config selection |
 | **Drift Visualization** | Three-column diff viewer: Attribute / Expected (Terraform) / Actual (AWS) |
 | **49 OPA Policies** | Severity filters, framework badges, and remediation guidance |
 | **Compliance Frameworks** | HIPAA, GDPR, ISO 27001, PCI DSS, SOC 2 mapping with per-framework compliance rings |
-| **Resource Builder** | Three modes: Terraform (auto-generate plan.json), Manual (S3/EC2 forms), Upload (drag & drop) |
+| **Resource Builder** | Three modes: Terraform (auto-generate plan.json), Manual (S3/EC2/IAM forms), Upload (drag & drop) |
 | **Interactive Dashboard** | Clickable KPI cards, drift trends, severity breakdown, top failing policies |
 | **Scan History** | Persistent history with trend charts and human-readable durations |
 | **Docker / Web** | One-command Docker deployment with nginx + Go backend + Terraform built in |

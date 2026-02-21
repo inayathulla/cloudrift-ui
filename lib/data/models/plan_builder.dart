@@ -239,6 +239,181 @@ class EC2ResourceDef {
 }
 
 // ---------------------------------------------------------------------------
+// IAM Resource Definitions
+// ---------------------------------------------------------------------------
+
+/// IAM Role resource definition for manual plan building.
+class IAMRoleDef {
+  String roleName;
+  String path;
+  String assumeRolePolicy;
+  int maxSessionDuration;
+  String description;
+  Map<String, String> tags;
+  List<String> attachedPolicies;
+
+  IAMRoleDef({
+    this.roleName = '',
+    this.path = '/',
+    this.assumeRolePolicy = '',
+    this.maxSessionDuration = 3600,
+    this.description = '',
+    Map<String, String>? tags,
+    List<String>? attachedPolicies,
+  })  : tags = tags ?? {},
+        attachedPolicies = attachedPolicies ?? [];
+
+  Map<String, dynamic> toChangeAfter() {
+    final after = <String, dynamic>{
+      'name': roleName,
+      'path': path,
+      'max_session_duration': maxSessionDuration,
+    };
+    if (assumeRolePolicy.isNotEmpty) {
+      after['assume_role_policy'] = assumeRolePolicy;
+    }
+    if (description.isNotEmpty) after['description'] = description;
+    if (tags.isNotEmpty) after['tags'] = tags;
+    if (attachedPolicies.isNotEmpty) {
+      after['attached_policies'] = attachedPolicies;
+    }
+    return after;
+  }
+
+  factory IAMRoleDef.fromChangeAfter(Map<String, dynamic> after) {
+    final tagsRaw = after['tags'] as Map<String, dynamic>?;
+    final policies = after['attached_policies'] as List<dynamic>?;
+    return IAMRoleDef(
+      roleName: (after['name'] ?? after['role_name'] ?? '') as String,
+      path: after['path'] as String? ?? '/',
+      assumeRolePolicy: after['assume_role_policy'] as String? ?? '',
+      maxSessionDuration:
+          (after['max_session_duration'] as num?)?.toInt() ?? 3600,
+      description: after['description'] as String? ?? '',
+      tags: tagsRaw?.map((k, v) => MapEntry(k, v.toString())) ?? {},
+      attachedPolicies: policies?.map((e) => e.toString()).toList() ?? [],
+    );
+  }
+}
+
+/// IAM User resource definition for manual plan building.
+class IAMUserDef {
+  String userName;
+  String path;
+  Map<String, String> tags;
+  List<String> attachedPolicies;
+
+  IAMUserDef({
+    this.userName = '',
+    this.path = '/',
+    Map<String, String>? tags,
+    List<String>? attachedPolicies,
+  })  : tags = tags ?? {},
+        attachedPolicies = attachedPolicies ?? [];
+
+  Map<String, dynamic> toChangeAfter() {
+    final after = <String, dynamic>{
+      'name': userName,
+      'path': path,
+    };
+    if (tags.isNotEmpty) after['tags'] = tags;
+    if (attachedPolicies.isNotEmpty) {
+      after['attached_policies'] = attachedPolicies;
+    }
+    return after;
+  }
+
+  factory IAMUserDef.fromChangeAfter(Map<String, dynamic> after) {
+    final tagsRaw = after['tags'] as Map<String, dynamic>?;
+    final policies = after['attached_policies'] as List<dynamic>?;
+    return IAMUserDef(
+      userName: (after['name'] ?? after['user_name'] ?? '') as String,
+      path: after['path'] as String? ?? '/',
+      tags: tagsRaw?.map((k, v) => MapEntry(k, v.toString())) ?? {},
+      attachedPolicies: policies?.map((e) => e.toString()).toList() ?? [],
+    );
+  }
+}
+
+/// IAM Policy resource definition for manual plan building.
+class IAMPolicyDef {
+  String policyName;
+  String path;
+  String policyDocument;
+  String description;
+  Map<String, String> tags;
+
+  IAMPolicyDef({
+    this.policyName = '',
+    this.path = '/',
+    this.policyDocument = '',
+    this.description = '',
+    Map<String, String>? tags,
+  }) : tags = tags ?? {};
+
+  Map<String, dynamic> toChangeAfter() {
+    final after = <String, dynamic>{
+      'name': policyName,
+      'path': path,
+    };
+    if (policyDocument.isNotEmpty) after['policy'] = policyDocument;
+    if (description.isNotEmpty) after['description'] = description;
+    if (tags.isNotEmpty) after['tags'] = tags;
+    return after;
+  }
+
+  factory IAMPolicyDef.fromChangeAfter(Map<String, dynamic> after) {
+    final tagsRaw = after['tags'] as Map<String, dynamic>?;
+    return IAMPolicyDef(
+      policyName: (after['name'] ?? after['policy_name'] ?? '') as String,
+      path: after['path'] as String? ?? '/',
+      policyDocument: (after['policy'] ?? after['policy_document'] ?? '') as String,
+      description: after['description'] as String? ?? '',
+      tags: tagsRaw?.map((k, v) => MapEntry(k, v.toString())) ?? {},
+    );
+  }
+}
+
+/// IAM Group resource definition for manual plan building.
+class IAMGroupDef {
+  String groupName;
+  String path;
+  List<String> attachedPolicies;
+  List<String> members;
+
+  IAMGroupDef({
+    this.groupName = '',
+    this.path = '/',
+    List<String>? attachedPolicies,
+    List<String>? members,
+  })  : attachedPolicies = attachedPolicies ?? [],
+        members = members ?? [];
+
+  Map<String, dynamic> toChangeAfter() {
+    final after = <String, dynamic>{
+      'name': groupName,
+      'path': path,
+    };
+    if (attachedPolicies.isNotEmpty) {
+      after['attached_policies'] = attachedPolicies;
+    }
+    if (members.isNotEmpty) after['members'] = members;
+    return after;
+  }
+
+  factory IAMGroupDef.fromChangeAfter(Map<String, dynamic> after) {
+    final policies = after['attached_policies'] as List<dynamic>?;
+    final membersList = after['members'] as List<dynamic>?;
+    return IAMGroupDef(
+      groupName: (after['name'] ?? after['group_name'] ?? '') as String,
+      path: after['path'] as String? ?? '/',
+      attachedPolicies: policies?.map((e) => e.toString()).toList() ?? [],
+      members: membersList?.map((e) => e.toString()).toList() ?? [],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Plan JSON Generator
 // ---------------------------------------------------------------------------
 
@@ -303,6 +478,97 @@ class PlanBuilder {
       final after = change['after'] as Map<String, dynamic>? ?? {};
       return EC2ResourceDef.fromChangeAfter(
           rcMap['address'] as String? ?? 'aws_instance.server', after);
+    }).toList();
+  }
+
+  /// Generates a plan.json map for IAM resources (roles, users, policies, groups).
+  static Map<String, dynamic> generateIAMPlan({
+    List<IAMRoleDef> roles = const [],
+    List<IAMUserDef> users = const [],
+    List<IAMPolicyDef> policies = const [],
+    List<IAMGroupDef> groups = const [],
+  }) {
+    final changes = <Map<String, dynamic>>[];
+    for (final r in roles) {
+      final name = r.roleName.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_');
+      changes.add({
+        'address': 'aws_iam_role.$name',
+        'type': 'aws_iam_role',
+        'name': name,
+        'change': {'actions': ['create'], 'after': r.toChangeAfter()},
+      });
+    }
+    for (final u in users) {
+      final name = u.userName.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_');
+      changes.add({
+        'address': 'aws_iam_user.$name',
+        'type': 'aws_iam_user',
+        'name': name,
+        'change': {'actions': ['create'], 'after': u.toChangeAfter()},
+      });
+    }
+    for (final p in policies) {
+      final name = p.policyName.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_');
+      changes.add({
+        'address': 'aws_iam_policy.$name',
+        'type': 'aws_iam_policy',
+        'name': name,
+        'change': {'actions': ['create'], 'after': p.toChangeAfter()},
+      });
+    }
+    for (final g in groups) {
+      final name = g.groupName.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_');
+      changes.add({
+        'address': 'aws_iam_group.$name',
+        'type': 'aws_iam_group',
+        'name': name,
+        'change': {'actions': ['create'], 'after': g.toChangeAfter()},
+      });
+    }
+    return {'resource_changes': changes};
+  }
+
+  /// Parses IAM roles from an existing plan.json.
+  static List<IAMRoleDef> parseIAMRoles(Map<String, dynamic> plan) {
+    final changes = plan['resource_changes'] as List<dynamic>? ?? [];
+    return changes
+        .where((rc) => (rc as Map<String, dynamic>)['type'] == 'aws_iam_role')
+        .map((rc) {
+      final change = (rc as Map<String, dynamic>)['change'] as Map<String, dynamic>;
+      return IAMRoleDef.fromChangeAfter(change['after'] as Map<String, dynamic>? ?? {});
+    }).toList();
+  }
+
+  /// Parses IAM users from an existing plan.json.
+  static List<IAMUserDef> parseIAMUsers(Map<String, dynamic> plan) {
+    final changes = plan['resource_changes'] as List<dynamic>? ?? [];
+    return changes
+        .where((rc) => (rc as Map<String, dynamic>)['type'] == 'aws_iam_user')
+        .map((rc) {
+      final change = (rc as Map<String, dynamic>)['change'] as Map<String, dynamic>;
+      return IAMUserDef.fromChangeAfter(change['after'] as Map<String, dynamic>? ?? {});
+    }).toList();
+  }
+
+  /// Parses IAM policies from an existing plan.json.
+  static List<IAMPolicyDef> parseIAMPolicies(Map<String, dynamic> plan) {
+    final changes = plan['resource_changes'] as List<dynamic>? ?? [];
+    return changes
+        .where((rc) => (rc as Map<String, dynamic>)['type'] == 'aws_iam_policy')
+        .map((rc) {
+      final change = (rc as Map<String, dynamic>)['change'] as Map<String, dynamic>;
+      return IAMPolicyDef.fromChangeAfter(change['after'] as Map<String, dynamic>? ?? {});
+    }).toList();
+  }
+
+  /// Parses IAM groups from an existing plan.json.
+  static List<IAMGroupDef> parseIAMGroups(Map<String, dynamic> plan) {
+    final changes = plan['resource_changes'] as List<dynamic>? ?? [];
+    return changes
+        .where((rc) => (rc as Map<String, dynamic>)['type'] == 'aws_iam_group')
+        .map((rc) {
+      final change = (rc as Map<String, dynamic>)['change'] as Map<String, dynamic>;
+      return IAMGroupDef.fromChangeAfter(change['after'] as Map<String, dynamic>? ?? {});
     }).toList();
   }
 }

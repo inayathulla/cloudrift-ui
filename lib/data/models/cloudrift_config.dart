@@ -1,4 +1,4 @@
-/// Represents a `cloudrift.yml` configuration file.
+/// Represents a `cloudrift-<service>.yml` configuration file.
 ///
 /// Mirrors the YAML structure consumed by the Cloudrift CLI's Viper config.
 /// Used for reading/writing configuration from the UI Settings screen.
@@ -42,7 +42,7 @@ class CloudriftConfig {
     );
   }
 
-  /// Serializes to YAML string for writing to `cloudrift.yml`.
+  /// Serializes to YAML string for writing to a cloudrift config file.
   String toYaml() {
     final buffer = StringBuffer();
     buffer.writeln('aws_profile: $awsProfile');

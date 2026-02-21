@@ -95,12 +95,12 @@ class CliDatasource {
   String get cloudriftRepoDir => _cloudriftRepoDir;
 
   String get defaultConfigPath {
-    if (kIsWeb) return 'config/cloudrift.yml';
+    if (kIsWeb) return 'config/cloudrift-s3.yml';
     if (_cloudriftRepoDir.isNotEmpty) {
-      final configFile = File('$_cloudriftRepoDir/config/cloudrift.yml');
+      final configFile = File('$_cloudriftRepoDir/config/cloudrift-s3.yml');
       if (configFile.existsSync()) return configFile.path;
     }
-    return 'cloudrift.yml';
+    return 'cloudrift-s3.yml';
   }
 
   Future<bool> isCliAvailable() async {

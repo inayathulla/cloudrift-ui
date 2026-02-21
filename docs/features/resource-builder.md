@@ -39,6 +39,14 @@ Build a plan JSON structure using a form-based editor:
 
 This is useful when you don't have Terraform files but want to define your expected infrastructure state.
 
+#### Supported Services
+
+| Service | Resource Types |
+|---------|---------------|
+| **S3** | Buckets (encryption, versioning, public access, ACLs, tags) |
+| **EC2** | Instances (AMI, type, subnet, security groups, tags) |
+| **IAM** | Roles, Users, Policies, Groups (trust policies, attached policies, members, tags) |
+
 ### Upload Mode
 
 Upload an existing Terraform plan JSON file:

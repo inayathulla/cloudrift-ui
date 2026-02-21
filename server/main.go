@@ -152,7 +152,15 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.ConfigPath == "" {
-		req.ConfigPath = "config/cloudrift.yml"
+		// Default config path based on service: cloudrift-s3.yml, cloudrift-ec2.yml, cloudrift-iam.yml
+		switch strings.ToLower(req.Service) {
+		case "ec2":
+			req.ConfigPath = "config/cloudrift-ec2.yml"
+		case "iam":
+			req.ConfigPath = "config/cloudrift-iam.yml"
+		default:
+			req.ConfigPath = "config/cloudrift-s3.yml"
+		}
 	}
 
 	args := []string{
@@ -241,7 +249,7 @@ func handleConfig(w http.ResponseWriter, r *http.Request) {
 func handleConfigGet(w http.ResponseWriter, r *http.Request) {
 	configPath := r.URL.Query().Get("path")
 	if configPath == "" {
-		configPath = "config/cloudrift.yml"
+		configPath = "config/cloudrift-s3.yml"
 	}
 	fullPath, err := safePath(configPath)
 	if err != nil {
@@ -260,7 +268,7 @@ func handleConfigGet(w http.ResponseWriter, r *http.Request) {
 func handleConfigPut(w http.ResponseWriter, r *http.Request) {
 	configPath := r.URL.Query().Get("path")
 	if configPath == "" {
-		configPath = "config/cloudrift.yml"
+		configPath = "config/cloudrift-s3.yml"
 	}
 	fullPath, err := safePath(configPath)
 	if err != nil {
@@ -495,9 +503,11 @@ func handleGeneratePlan(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Update the matching config file's plan_path
-	configFile := "config/cloudrift.yml"
+	configFile := "config/cloudrift-s3.yml"
 	if strings.EqualFold(req.Service, "ec2") {
 		configFile = "config/cloudrift-ec2.yml"
+	} else if strings.EqualFold(req.Service, "iam") {
+		configFile = "config/cloudrift-iam.yml"
 	}
 	fullConfigPath, err := safePath(configFile)
 	if err == nil {
@@ -772,7 +782,7 @@ func runTerraformPipeline(job *TerraformJob, tfDir string) {
 	}
 
 	// Step 5: Update config
-	configFile := "config/cloudrift.yml"
+	configFile := "config/cloudrift-s3.yml"
 	fullConfigPath, _ := safePath(configFile)
 	if configData, readErr := os.ReadFile(fullConfigPath); readErr == nil {
 		lines := strings.Split(string(configData), "\n")

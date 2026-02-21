@@ -35,6 +35,10 @@ class _ResourceBuilderScreenState
   String _selectedService = 's3';
   List<S3ResourceDef> _s3Resources = [];
   List<EC2ResourceDef> _ec2Resources = [];
+  List<IAMRoleDef> _iamRoles = [];
+  List<IAMUserDef> _iamUsers = [];
+  List<IAMPolicyDef> _iamPolicies = [];
+  List<IAMGroupDef> _iamGroups = [];
   bool _saving = false;
   bool _loading = false;
   String? _message;
@@ -94,6 +98,10 @@ class _ResourceBuilderScreenState
       final plan = jsonDecode(json) as Map<String, dynamic>;
       final s3 = PlanBuilder.parseS3Plan(plan);
       final ec2 = PlanBuilder.parseEC2Plan(plan);
+      final iamRoles = PlanBuilder.parseIAMRoles(plan);
+      final iamUsers = PlanBuilder.parseIAMUsers(plan);
+      final iamPolicies = PlanBuilder.parseIAMPolicies(plan);
+      final iamGroups = PlanBuilder.parseIAMGroups(plan);
       setState(() {
         if (s3.isNotEmpty) {
           _s3Resources = s3;
@@ -102,6 +110,14 @@ class _ResourceBuilderScreenState
         if (ec2.isNotEmpty) {
           _ec2Resources = ec2;
           if (s3.isEmpty) _selectedService = 'ec2';
+        }
+        if (iamRoles.isNotEmpty || iamUsers.isNotEmpty ||
+            iamPolicies.isNotEmpty || iamGroups.isNotEmpty) {
+          _iamRoles = iamRoles;
+          _iamUsers = iamUsers;
+          _iamPolicies = iamPolicies;
+          _iamGroups = iamGroups;
+          if (s3.isEmpty && ec2.isEmpty) _selectedService = 'iam';
         }
       });
     } catch (_) {
@@ -123,6 +139,10 @@ class _ResourceBuilderScreenState
       final plan = jsonDecode(content) as Map<String, dynamic>;
       final s3 = PlanBuilder.parseS3Plan(plan);
       final ec2 = PlanBuilder.parseEC2Plan(plan);
+      final iamRoles = PlanBuilder.parseIAMRoles(plan);
+      final iamUsers = PlanBuilder.parseIAMUsers(plan);
+      final iamPolicies = PlanBuilder.parseIAMPolicies(plan);
+      final iamGroups = PlanBuilder.parseIAMGroups(plan);
       setState(() {
         if (s3.isNotEmpty) {
           _s3Resources = s3;
@@ -132,6 +152,14 @@ class _ResourceBuilderScreenState
           _ec2Resources = ec2;
           if (s3.isEmpty) _selectedService = 'ec2';
         }
+        if (iamRoles.isNotEmpty || iamUsers.isNotEmpty ||
+            iamPolicies.isNotEmpty || iamGroups.isNotEmpty) {
+          _iamRoles = iamRoles;
+          _iamUsers = iamUsers;
+          _iamPolicies = iamPolicies;
+          _iamGroups = iamGroups;
+          if (s3.isEmpty && ec2.isEmpty) _selectedService = 'iam';
+        }
       });
     } catch (_) {
       // No existing plan — start fresh
@@ -139,8 +167,15 @@ class _ResourceBuilderScreenState
   }
 
   Future<void> _generateAndSave() async {
-    final resources = _selectedService == 's3' ? _s3Resources : _ec2Resources;
-    if (resources.isEmpty) {
+    // Check emptiness per service
+    final isEmpty = switch (_selectedService) {
+      's3' => _s3Resources.isEmpty,
+      'ec2' => _ec2Resources.isEmpty,
+      'iam' => _iamRoles.isEmpty && _iamUsers.isEmpty &&
+               _iamPolicies.isEmpty && _iamGroups.isEmpty,
+      _ => true,
+    };
+    if (isEmpty) {
       setState(() {
         _message = 'Add at least one resource before generating.';
         _messageIsError = true;
@@ -158,11 +193,23 @@ class _ResourceBuilderScreenState
         });
         return;
       }
-    } else {
+    } else if (_selectedService == 'ec2') {
       final emptyAmi = _ec2Resources.any((r) => r.ami.trim().isEmpty);
       if (emptyAmi) {
         setState(() {
           _message = 'All EC2 instances must have an AMI ID.';
+          _messageIsError = true;
+        });
+        return;
+      }
+    } else if (_selectedService == 'iam') {
+      final emptyRole = _iamRoles.any((r) => r.roleName.trim().isEmpty);
+      final emptyUser = _iamUsers.any((u) => u.userName.trim().isEmpty);
+      final emptyPolicy = _iamPolicies.any((p) => p.policyName.trim().isEmpty);
+      final emptyGroup = _iamGroups.any((g) => g.groupName.trim().isEmpty);
+      if (emptyRole || emptyUser || emptyPolicy || emptyGroup) {
+        setState(() {
+          _message = 'All IAM resources must have a name.';
           _messageIsError = true;
         });
         return;
@@ -175,9 +222,17 @@ class _ResourceBuilderScreenState
     });
 
     try {
-      final planJson = _selectedService == 's3'
-          ? PlanBuilder.generateS3Plan(_s3Resources)
-          : PlanBuilder.generateEC2Plan(_ec2Resources);
+      final planJson = switch (_selectedService) {
+        's3' => PlanBuilder.generateS3Plan(_s3Resources),
+        'ec2' => PlanBuilder.generateEC2Plan(_ec2Resources),
+        'iam' => PlanBuilder.generateIAMPlan(
+            roles: _iamRoles,
+            users: _iamUsers,
+            policies: _iamPolicies,
+            groups: _iamGroups,
+          ),
+        _ => PlanBuilder.generateS3Plan(_s3Resources),
+      };
 
       if (kIsWeb) {
         final ds = ref.read(configDatasourceProvider);
@@ -506,6 +561,7 @@ class _ResourceBuilderScreenState
                     const SizedBox(height: 20),
                     if (_selectedService == 's3') _buildS3Section(),
                     if (_selectedService == 'ec2') _buildEC2Section(),
+                    if (_selectedService == 'iam') _buildIAMSection(),
                     const SizedBox(height: 24),
                     _buildActionBar(),
                   ],
@@ -1081,6 +1137,13 @@ class _ResourceBuilderScreenState
           selected: _selectedService == 'ec2',
           onTap: () => setState(() => _selectedService = 'ec2'),
         ),
+        const SizedBox(width: 8),
+        _ServiceChip(
+          label: 'IAM',
+          icon: Icons.admin_panel_settings_outlined,
+          selected: _selectedService == 'iam',
+          onTap: () => setState(() => _selectedService = 'iam'),
+        ),
       ],
     );
   }
@@ -1104,9 +1167,17 @@ class _ResourceBuilderScreenState
         const SizedBox(width: 12),
         OutlinedButton.icon(
           onPressed: () {
-            final planJson = _selectedService == 's3'
-                ? PlanBuilder.generateS3Plan(_s3Resources)
-                : PlanBuilder.generateEC2Plan(_ec2Resources);
+            final planJson = switch (_selectedService) {
+              's3' => PlanBuilder.generateS3Plan(_s3Resources),
+              'ec2' => PlanBuilder.generateEC2Plan(_ec2Resources),
+              'iam' => PlanBuilder.generateIAMPlan(
+                  roles: _iamRoles,
+                  users: _iamUsers,
+                  policies: _iamPolicies,
+                  groups: _iamGroups,
+                ),
+              _ => PlanBuilder.generateS3Plan(_s3Resources),
+            };
             _showJsonPreview(planJson);
           },
           icon: const Icon(Icons.code, size: 18),
@@ -1173,6 +1244,586 @@ class _ResourceBuilderScreenState
           label: const Text('Add EC2 Instance'),
         ),
       ],
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // IAM Section
+  // ---------------------------------------------------------------------------
+
+  Widget _buildIAMSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Roles ──
+        _buildIAMSubHeader('Roles', Icons.badge_outlined, _iamRoles.length,
+            () => setState(() => _iamRoles.add(IAMRoleDef()))),
+        ..._iamRoles.asMap().entries.map(
+              (entry) => _IAMRoleCard(
+                key: ValueKey('iam-role-${entry.key}'),
+                index: entry.key,
+                resource: entry.value,
+                onChanged: (r) =>
+                    setState(() => _iamRoles[entry.key] = r),
+                onDelete: () =>
+                    setState(() => _iamRoles.removeAt(entry.key)),
+              ),
+            ),
+        const SizedBox(height: 20),
+
+        // ── Users ──
+        _buildIAMSubHeader('Users', Icons.person_outlined, _iamUsers.length,
+            () => setState(() => _iamUsers.add(IAMUserDef()))),
+        ..._iamUsers.asMap().entries.map(
+              (entry) => _IAMUserCard(
+                key: ValueKey('iam-user-${entry.key}'),
+                index: entry.key,
+                resource: entry.value,
+                onChanged: (u) =>
+                    setState(() => _iamUsers[entry.key] = u),
+                onDelete: () =>
+                    setState(() => _iamUsers.removeAt(entry.key)),
+              ),
+            ),
+        const SizedBox(height: 20),
+
+        // ── Policies ──
+        _buildIAMSubHeader('Policies', Icons.policy_outlined, _iamPolicies.length,
+            () => setState(() => _iamPolicies.add(IAMPolicyDef()))),
+        ..._iamPolicies.asMap().entries.map(
+              (entry) => _IAMPolicyCard(
+                key: ValueKey('iam-policy-${entry.key}'),
+                index: entry.key,
+                resource: entry.value,
+                onChanged: (p) =>
+                    setState(() => _iamPolicies[entry.key] = p),
+                onDelete: () =>
+                    setState(() => _iamPolicies.removeAt(entry.key)),
+              ),
+            ),
+        const SizedBox(height: 20),
+
+        // ── Groups ──
+        _buildIAMSubHeader('Groups', Icons.group_outlined, _iamGroups.length,
+            () => setState(() => _iamGroups.add(IAMGroupDef()))),
+        ..._iamGroups.asMap().entries.map(
+              (entry) => _IAMGroupCard(
+                key: ValueKey('iam-group-${entry.key}'),
+                index: entry.key,
+                resource: entry.value,
+                onChanged: (g) =>
+                    setState(() => _iamGroups[entry.key] = g),
+                onDelete: () =>
+                    setState(() => _iamGroups.removeAt(entry.key)),
+              ),
+            ),
+      ],
+    );
+  }
+
+  Widget _buildIAMSubHeader(
+      String label, IconData icon, int count, VoidCallback onAdd) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: AppColors.textSecondary),
+          const SizedBox(width: 8),
+          Text(
+            '$label ($count)',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const Spacer(),
+          TextButton.icon(
+            onPressed: onAdd,
+            icon: const Icon(Icons.add, size: 16),
+            label: Text('Add $label'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// IAM Role Card
+// =============================================================================
+
+class _IAMRoleCard extends StatefulWidget {
+  final int index;
+  final IAMRoleDef resource;
+  final ValueChanged<IAMRoleDef> onChanged;
+  final VoidCallback onDelete;
+
+  const _IAMRoleCard({
+    super.key,
+    required this.index,
+    required this.resource,
+    required this.onChanged,
+    required this.onDelete,
+  });
+
+  @override
+  State<_IAMRoleCard> createState() => _IAMRoleCardState();
+}
+
+class _IAMRoleCardState extends State<_IAMRoleCard> {
+  late TextEditingController _nameCtrl;
+  late TextEditingController _pathCtrl;
+  late TextEditingController _descCtrl;
+  late TextEditingController _trustPolicyCtrl;
+  late TextEditingController _maxSessionCtrl;
+  late TextEditingController _policiesCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl = TextEditingController(text: widget.resource.roleName);
+    _pathCtrl = TextEditingController(text: widget.resource.path);
+    _descCtrl = TextEditingController(text: widget.resource.description);
+    _trustPolicyCtrl =
+        TextEditingController(text: widget.resource.assumeRolePolicy);
+    _maxSessionCtrl = TextEditingController(
+        text: widget.resource.maxSessionDuration.toString());
+    _policiesCtrl = TextEditingController(
+        text: widget.resource.attachedPolicies.join('\n'));
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _pathCtrl.dispose();
+    _descCtrl.dispose();
+    _trustPolicyCtrl.dispose();
+    _maxSessionCtrl.dispose();
+    _policiesCtrl.dispose();
+    super.dispose();
+  }
+
+  void _sync() {
+    widget.resource.roleName = _nameCtrl.text;
+    widget.resource.path = _pathCtrl.text;
+    widget.resource.description = _descCtrl.text;
+    widget.resource.assumeRolePolicy = _trustPolicyCtrl.text;
+    widget.resource.maxSessionDuration =
+        int.tryParse(_maxSessionCtrl.text) ?? 3600;
+    widget.resource.attachedPolicies = _policiesCtrl.text
+        .split('\n')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+    widget.onChanged(widget.resource);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassmorphicCard(
+      accentColor: AppColors.accentBlue,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text('Role ${widget.index + 1}',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary)),
+              const Spacer(),
+              IconButton(
+                  icon: const Icon(Icons.delete_outline,
+                      size: 18, color: AppColors.critical),
+                  onPressed: widget.onDelete),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _field('Role Name *', _nameCtrl),
+          _field('Path', _pathCtrl),
+          _field('Description', _descCtrl),
+          _field('Max Session Duration (seconds)', _maxSessionCtrl),
+          _multiField('Trust Policy (JSON)', _trustPolicyCtrl),
+          _multiField('Attached Policy ARNs (one per line)', _policiesCtrl),
+        ],
+      ),
+    );
+  }
+
+  Widget _field(String label, TextEditingController ctrl) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: TextField(
+        controller: ctrl,
+        onChanged: (_) => _sync(),
+        decoration: InputDecoration(
+          labelText: label,
+          isDense: true,
+        ),
+      ),
+    );
+  }
+
+  Widget _multiField(String label, TextEditingController ctrl) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: TextField(
+        controller: ctrl,
+        onChanged: (_) => _sync(),
+        maxLines: 3,
+        decoration: InputDecoration(
+          labelText: label,
+          isDense: true,
+          alignLabelWithHint: true,
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// IAM User Card
+// =============================================================================
+
+class _IAMUserCard extends StatefulWidget {
+  final int index;
+  final IAMUserDef resource;
+  final ValueChanged<IAMUserDef> onChanged;
+  final VoidCallback onDelete;
+
+  const _IAMUserCard({
+    super.key,
+    required this.index,
+    required this.resource,
+    required this.onChanged,
+    required this.onDelete,
+  });
+
+  @override
+  State<_IAMUserCard> createState() => _IAMUserCardState();
+}
+
+class _IAMUserCardState extends State<_IAMUserCard> {
+  late TextEditingController _nameCtrl;
+  late TextEditingController _pathCtrl;
+  late TextEditingController _policiesCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl = TextEditingController(text: widget.resource.userName);
+    _pathCtrl = TextEditingController(text: widget.resource.path);
+    _policiesCtrl = TextEditingController(
+        text: widget.resource.attachedPolicies.join('\n'));
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _pathCtrl.dispose();
+    _policiesCtrl.dispose();
+    super.dispose();
+  }
+
+  void _sync() {
+    widget.resource.userName = _nameCtrl.text;
+    widget.resource.path = _pathCtrl.text;
+    widget.resource.attachedPolicies = _policiesCtrl.text
+        .split('\n')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+    widget.onChanged(widget.resource);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassmorphicCard(
+      accentColor: AppColors.accentTeal,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text('User ${widget.index + 1}',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary)),
+              const Spacer(),
+              IconButton(
+                  icon: const Icon(Icons.delete_outline,
+                      size: 18, color: AppColors.critical),
+                  onPressed: widget.onDelete),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _field('User Name *', _nameCtrl),
+          _field('Path', _pathCtrl),
+          _multiField('Attached Policy ARNs (one per line)', _policiesCtrl),
+        ],
+      ),
+    );
+  }
+
+  Widget _field(String label, TextEditingController ctrl) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: TextField(
+        controller: ctrl,
+        onChanged: (_) => _sync(),
+        decoration: InputDecoration(labelText: label, isDense: true),
+      ),
+    );
+  }
+
+  Widget _multiField(String label, TextEditingController ctrl) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: TextField(
+        controller: ctrl,
+        onChanged: (_) => _sync(),
+        maxLines: 3,
+        decoration: InputDecoration(
+          labelText: label,
+          isDense: true,
+          alignLabelWithHint: true,
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// IAM Policy Card
+// =============================================================================
+
+class _IAMPolicyCard extends StatefulWidget {
+  final int index;
+  final IAMPolicyDef resource;
+  final ValueChanged<IAMPolicyDef> onChanged;
+  final VoidCallback onDelete;
+
+  const _IAMPolicyCard({
+    super.key,
+    required this.index,
+    required this.resource,
+    required this.onChanged,
+    required this.onDelete,
+  });
+
+  @override
+  State<_IAMPolicyCard> createState() => _IAMPolicyCardState();
+}
+
+class _IAMPolicyCardState extends State<_IAMPolicyCard> {
+  late TextEditingController _nameCtrl;
+  late TextEditingController _pathCtrl;
+  late TextEditingController _descCtrl;
+  late TextEditingController _docCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl = TextEditingController(text: widget.resource.policyName);
+    _pathCtrl = TextEditingController(text: widget.resource.path);
+    _descCtrl = TextEditingController(text: widget.resource.description);
+    _docCtrl = TextEditingController(text: widget.resource.policyDocument);
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _pathCtrl.dispose();
+    _descCtrl.dispose();
+    _docCtrl.dispose();
+    super.dispose();
+  }
+
+  void _sync() {
+    widget.resource.policyName = _nameCtrl.text;
+    widget.resource.path = _pathCtrl.text;
+    widget.resource.description = _descCtrl.text;
+    widget.resource.policyDocument = _docCtrl.text;
+    widget.onChanged(widget.resource);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassmorphicCard(
+      accentColor: AppColors.accentPurple,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text('Policy ${widget.index + 1}',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary)),
+              const Spacer(),
+              IconButton(
+                  icon: const Icon(Icons.delete_outline,
+                      size: 18, color: AppColors.critical),
+                  onPressed: widget.onDelete),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _field('Policy Name *', _nameCtrl),
+          _field('Path', _pathCtrl),
+          _field('Description', _descCtrl),
+          _multiField('Policy Document (JSON)', _docCtrl),
+        ],
+      ),
+    );
+  }
+
+  Widget _field(String label, TextEditingController ctrl) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: TextField(
+        controller: ctrl,
+        onChanged: (_) => _sync(),
+        decoration: InputDecoration(labelText: label, isDense: true),
+      ),
+    );
+  }
+
+  Widget _multiField(String label, TextEditingController ctrl) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: TextField(
+        controller: ctrl,
+        onChanged: (_) => _sync(),
+        maxLines: 5,
+        decoration: InputDecoration(
+          labelText: label,
+          isDense: true,
+          alignLabelWithHint: true,
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// IAM Group Card
+// =============================================================================
+
+class _IAMGroupCard extends StatefulWidget {
+  final int index;
+  final IAMGroupDef resource;
+  final ValueChanged<IAMGroupDef> onChanged;
+  final VoidCallback onDelete;
+
+  const _IAMGroupCard({
+    super.key,
+    required this.index,
+    required this.resource,
+    required this.onChanged,
+    required this.onDelete,
+  });
+
+  @override
+  State<_IAMGroupCard> createState() => _IAMGroupCardState();
+}
+
+class _IAMGroupCardState extends State<_IAMGroupCard> {
+  late TextEditingController _nameCtrl;
+  late TextEditingController _pathCtrl;
+  late TextEditingController _policiesCtrl;
+  late TextEditingController _membersCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl = TextEditingController(text: widget.resource.groupName);
+    _pathCtrl = TextEditingController(text: widget.resource.path);
+    _policiesCtrl = TextEditingController(
+        text: widget.resource.attachedPolicies.join('\n'));
+    _membersCtrl = TextEditingController(
+        text: widget.resource.members.join('\n'));
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _pathCtrl.dispose();
+    _policiesCtrl.dispose();
+    _membersCtrl.dispose();
+    super.dispose();
+  }
+
+  void _sync() {
+    widget.resource.groupName = _nameCtrl.text;
+    widget.resource.path = _pathCtrl.text;
+    widget.resource.attachedPolicies = _policiesCtrl.text
+        .split('\n')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+    widget.resource.members = _membersCtrl.text
+        .split('\n')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+    widget.onChanged(widget.resource);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassmorphicCard(
+      accentColor: AppColors.high,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text('Group ${widget.index + 1}',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary)),
+              const Spacer(),
+              IconButton(
+                  icon: const Icon(Icons.delete_outline,
+                      size: 18, color: AppColors.critical),
+                  onPressed: widget.onDelete),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _field('Group Name *', _nameCtrl),
+          _field('Path', _pathCtrl),
+          _multiField('Attached Policy ARNs (one per line)', _policiesCtrl),
+          _multiField('Members (usernames, one per line)', _membersCtrl),
+        ],
+      ),
+    );
+  }
+
+  Widget _field(String label, TextEditingController ctrl) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: TextField(
+        controller: ctrl,
+        onChanged: (_) => _sync(),
+        decoration: InputDecoration(labelText: label, isDense: true),
+      ),
+    );
+  }
+
+  Widget _multiField(String label, TextEditingController ctrl) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: TextField(
+        controller: ctrl,
+        onChanged: (_) => _sync(),
+        maxLines: 3,
+        decoration: InputDecoration(
+          labelText: label,
+          isDense: true,
+          alignLabelWithHint: true,
+        ),
+      ),
     );
   }
 }

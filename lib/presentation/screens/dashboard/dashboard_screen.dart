@@ -383,6 +383,16 @@ class DashboardScreen extends ConsumerWidget {
                           withDrift:
                               result.service == 'EC2' ? result.driftCount : 0,
                         ),
+                        const SizedBox(height: 12),
+                        _ServiceHealthCard(
+                          service: 'IAM',
+                          icon: Icons.shield_outlined,
+                          total: result.service == 'IAM'
+                              ? result.totalResources
+                              : 0,
+                          withDrift:
+                              result.service == 'IAM' ? result.driftCount : 0,
+                        ),
                       ],
                     ),
                   ),

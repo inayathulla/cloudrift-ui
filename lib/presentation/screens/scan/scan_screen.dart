@@ -42,20 +42,41 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
     super.dispose();
   }
 
-  void _switchService(String service) {
-    setState(() => _selectedService = service);
-    // Auto-update config path to match the selected service
+  // Tracks progress when scanning all services sequentially.
+  int _allScanIndex = 0;
+  int _allScanTotal = 0;
+
+  String _configPathForService(String service) {
     final cli = ref.read(cliDatasourceProvider);
     final repoDir = cli.cloudriftRepoDir;
-    if (repoDir.isNotEmpty) {
-      final configFile = service == 'ec2'
-          ? '$repoDir/config/cloudrift-ec2.yml'
-          : '$repoDir/config/cloudrift.yml';
-      _configPathController.text = configFile;
+    // Web mode: repoDir is empty, use relative config/ paths.
+    if (repoDir.isEmpty) {
+      return switch (service) {
+        'ec2' => 'config/cloudrift-ec2.yml',
+        'iam' => 'config/cloudrift-iam.yml',
+        _ => 'config/cloudrift-s3.yml',
+      };
+    }
+    return switch (service) {
+      'ec2' => '$repoDir/config/cloudrift-ec2.yml',
+      'iam' => '$repoDir/config/cloudrift-iam.yml',
+      _ => '$repoDir/config/cloudrift-s3.yml',
+    };
+  }
+
+  void _switchService(String service) {
+    setState(() => _selectedService = service);
+    // Auto-update config path to match the selected service.
+    if (service != 'all') {
+      _configPathController.text = _configPathForService(service);
     }
   }
 
   void _startScan() {
+    if (_selectedService == 'all') {
+      _startAllScans();
+      return;
+    }
     _elapsed = Duration.zero;
     _elapsedTimer?.cancel();
     _elapsedTimer = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -66,6 +87,39 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
           configPath: _configPathController.text,
           service: _selectedService,
         );
+  }
+
+  /// Runs S3, EC2, and IAM scans sequentially when "All" is selected.
+  Future<void> _startAllScans() async {
+    const services = ['s3', 'ec2', 'iam'];
+    _elapsed = Duration.zero;
+    _elapsedTimer?.cancel();
+    _elapsedTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      setState(() => _elapsed += const Duration(seconds: 1));
+    });
+
+    setState(() {
+      _allScanIndex = 0;
+      _allScanTotal = services.length;
+    });
+
+    for (int i = 0; i < services.length; i++) {
+      setState(() => _allScanIndex = i + 1);
+      final svc = services[i];
+      final configPath = _configPathForService(svc);
+      await ref.read(scanStateProvider.notifier).runScan(
+            configPath: configPath,
+            service: svc,
+          );
+      // Stop if a scan errors out.
+      if (ref.read(scanStateProvider).status == ScanStatus.error) break;
+    }
+
+    _elapsedTimer?.cancel();
+    setState(() {
+      _allScanIndex = 0;
+      _allScanTotal = 0;
+    });
   }
 
   @override
@@ -124,20 +178,33 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
                                     fontSize: 12,
                                     color: AppColors.textSecondary)),
                             const SizedBox(height: 8),
-                            Row(
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
                               children: [
+                                _ServiceChip(
+                                  label: 'All',
+                                  icon: Icons.select_all_outlined,
+                                  selected: _selectedService == 'all',
+                                  onTap: () => _switchService('all'),
+                                ),
                                 _ServiceChip(
                                   label: 'S3',
                                   icon: Icons.cloud_outlined,
                                   selected: _selectedService == 's3',
                                   onTap: () => _switchService('s3'),
                                 ),
-                                const SizedBox(width: 8),
                                 _ServiceChip(
                                   label: 'EC2',
                                   icon: Icons.computer_outlined,
                                   selected: _selectedService == 'ec2',
                                   onTap: () => _switchService('ec2'),
+                                ),
+                                _ServiceChip(
+                                  label: 'IAM',
+                                  icon: Icons.shield_outlined,
+                                  selected: _selectedService == 'iam',
+                                  onTap: () => _switchService('iam'),
                                 ),
                               ],
                             ),
@@ -145,7 +212,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
                         ),
                       ),
                       const SizedBox(width: 24),
-                      // Config path
+                      // Config path (hidden when "All" is selected)
                       Expanded(
                         flex: 2,
                         child: Column(
@@ -156,15 +223,37 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
                                     fontSize: 12,
                                     color: AppColors.textSecondary)),
                             const SizedBox(height: 8),
-                            TextField(
-                              controller: _configPathController,
-                              style: const TextStyle(fontSize: 14),
-                              decoration: const InputDecoration(
-                                hintText: 'Path to cloudrift.yml',
-                                prefixIcon:
-                                    Icon(Icons.description_outlined, size: 18),
+                            if (_selectedService == 'all')
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 14),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surfaceElevated,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border:
+                                      Border.all(color: AppColors.border),
+                                ),
+                                child: Text(
+                                  _allScanTotal > 0
+                                      ? 'Scanning service $_allScanIndex of $_allScanTotal...'
+                                      : 'Scans all services (S3, EC2, IAM) sequentially',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              )
+                            else
+                              TextField(
+                                controller: _configPathController,
+                                style: const TextStyle(fontSize: 14),
+                                decoration: const InputDecoration(
+                                  hintText: 'Path to cloudrift-<service>.yml',
+                                  prefixIcon: Icon(
+                                      Icons.description_outlined,
+                                      size: 18),
+                                ),
                               ),
-                            ),
                           ],
                         ),
                       ),

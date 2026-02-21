@@ -28,7 +28,7 @@ skip_policies: false            # optional
 
 Each AWS service needs its own plan file. Create separate configs:
 
-=== "S3 (cloudrift.yml)"
+=== "S3 (cloudrift-s3.yml)"
 
     ```yaml
     aws_profile: default
@@ -44,6 +44,14 @@ Each AWS service needs its own plan file. Create separate configs:
     plan_path: ./examples/ec2-plan.json
     ```
 
+=== "IAM (cloudrift-iam.yml)"
+
+    ```yaml
+    aws_profile: default
+    region: us-east-1
+    plan_path: ./examples/iam-plan.json
+    ```
+
 The Scan screen auto-switches the config path when you change the service selector.
 
 ## Config Locations
@@ -53,7 +61,7 @@ The Scan screen auto-switches the config path when you change the service select
 The Docker image includes default configs at:
 
 ```
-/etc/cloudrift/config/cloudrift.yml
+/etc/cloudrift/config/cloudrift-s3.yml
 /etc/cloudrift/examples/terraform-plan.json
 ```
 
@@ -62,8 +70,9 @@ The Docker image includes default configs at:
 The app looks for configs relative to the CLI binary's directory:
 
 ```
-<cloudrift-repo>/config/cloudrift.yml
+<cloudrift-repo>/config/cloudrift-s3.yml
 <cloudrift-repo>/config/cloudrift-ec2.yml
+<cloudrift-repo>/config/cloudrift-iam.yml
 ```
 
 ### Web API
@@ -72,10 +81,10 @@ Use the config endpoints to read and write configs:
 
 ```bash
 # Read current config
-curl http://localhost:8080/api/config?path=/etc/cloudrift/config/cloudrift.yml
+curl http://localhost:8080/api/config?path=/etc/cloudrift/config/cloudrift-s3.yml
 
 # Update config
-curl -X PUT http://localhost:8080/api/config?path=/etc/cloudrift/config/cloudrift.yml \
+curl -X PUT http://localhost:8080/api/config?path=/etc/cloudrift/config/cloudrift-s3.yml \
   -d 'aws_profile: production
 region: eu-west-1
 plan_path: /etc/cloudrift/examples/terraform-plan.json'

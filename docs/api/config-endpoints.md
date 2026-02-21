@@ -7,7 +7,7 @@ Read a cloudrift YAML configuration file.
 ### Request
 
 ```bash
-curl "http://localhost:8080/api/config?path=/etc/cloudrift/config/cloudrift.yml"
+curl "http://localhost:8080/api/config?path=/etc/cloudrift/config/cloudrift-s3.yml"
 ```
 
 **Query Parameters:**
@@ -51,7 +51,7 @@ Write a cloudrift YAML configuration file.
 ### Request
 
 ```bash
-curl -X PUT "http://localhost:8080/api/config?path=/etc/cloudrift/config/cloudrift.yml" \
+curl -X PUT "http://localhost:8080/api/config?path=/etc/cloudrift/config/cloudrift-s3.yml" \
   -d 'aws_profile: production
 region: eu-west-1
 plan_path: /etc/cloudrift/examples/terraform-plan.json'

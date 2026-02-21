@@ -208,5 +208,5 @@ done
 PLAN_PATH=$(echo $STATUS | jq -r '.plan_path')
 curl -X POST http://localhost:8080/api/scan \
   -H "Content-Type: application/json" \
-  -d "{\"service\":\"s3\",\"config_path\":\"/etc/cloudrift/config/cloudrift.yml\"}"
+  -d "{\"service\":\"s3\",\"config_path\":\"/etc/cloudrift/config/cloudrift-s3.yml\"}"
 ```

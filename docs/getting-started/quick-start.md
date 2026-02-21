@@ -97,7 +97,7 @@ Once running (Docker or Desktop):
 
 1. Navigate to the **Scan** screen
 2. Select a service (S3 or EC2)
-3. Verify the config path points to a valid `cloudrift.yml`
+3. Verify the config path points to a valid `cloudrift-<service>.yml`
 4. Click **Run Scan**
 
 The scan will detect drift between your live AWS resources and your Terraform plan file, then evaluate all 49 security policies.

@@ -227,7 +227,7 @@ final resourceSummariesProvider = Provider<List<ResourceSummary>>((ref) {
 // ---------------------------------------------------------------------------
 
 /// Policy ID prefixes that map to the Security category.
-const _securityPrefixes = ['S3-', 'EC2-', 'SG-'];
+const _securityPrefixes = ['S3-', 'EC2-', 'SG-', 'IAM-'];
 
 /// Policy ID prefixes that map to the Tagging category.
 const _taggingPrefixes = ['TAG-'];
@@ -236,7 +236,7 @@ const _taggingPrefixes = ['TAG-'];
 const _costPrefixes = ['COST-'];
 
 /// Expected total policy counts per category (used for percentage calculation).
-const _securityPolicyCount = 14;
+const _securityPolicyCount = 17;
 const _taggingPolicyCount = 4;
 const _costPolicyCount = 3;
 

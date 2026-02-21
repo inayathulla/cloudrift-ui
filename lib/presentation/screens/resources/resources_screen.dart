@@ -101,7 +101,7 @@ class _ResourcesScreenState extends ConsumerState<ResourcesScreen> {
                 Row(
                   children: [
                     // Service chips
-                    ...['All', 'S3', 'EC2'].map((s) => Padding(
+                    ...['All', 'S3', 'EC2', 'IAM'].map((s) => Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: ChoiceChip(
                             label: Text(s),
@@ -267,9 +267,11 @@ class _ResourceCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
-                    resource.service == 'S3'
-                        ? Icons.cloud_outlined
-                        : Icons.computer_outlined,
+                    switch (resource.service) {
+                      'S3' => Icons.cloud_outlined,
+                      'IAM' => Icons.admin_panel_settings_outlined,
+                      _ => Icons.computer_outlined,
+                    },
                     size: 20,
                     color: AppColors.textSecondary,
                   ),

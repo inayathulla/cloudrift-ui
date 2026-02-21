@@ -67,7 +67,7 @@ curl http://localhost:8080/api/files/list
 ```json
 {
   "configs": [
-    "/etc/cloudrift/config/cloudrift.yml",
+    "/etc/cloudrift/config/cloudrift-s3.yml",
     "/etc/cloudrift/config/cloudrift-ec2.yml"
   ],
   "plans": [
@@ -155,7 +155,7 @@ curl -X POST http://localhost:8080/api/files/generate-plan \
 {
   "status": "ok",
   "plan_path": "/etc/cloudrift/examples/generated-plan.json",
-  "config": "/etc/cloudrift/config/cloudrift.yml"
+  "config": "/etc/cloudrift/config/cloudrift-s3.yml"
 }
 ```
 
